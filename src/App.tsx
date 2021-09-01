@@ -5,37 +5,14 @@ import * as math from "ts-math";
 // import { groupBy } from "lodash";
 
 import "./App.css";
-import superstoreSalesData from "./data/train.json";
+import { salesByDate } from "./SuperstoreSalesData";
+import { airlinePassengers } from "./AirlinePassengersData";
 
 // https://towardsdatascience.com/an-end-to-end-project-on-time-series-analysis-and-forecasting-with-python-4835e6bf050b
 
-interface DataItem {
-  orderDate: string;
-  sales: number;
-}
-
-const dataUngrouped: DataItem[] = (superstoreSalesData as any[])
-  .filter((d) => !isNaN(d.Sales) && d.Sales > 0)
-  .map((d) => {
-    const m = d["Order Date"].match(/([0-9]+)\/([0-9]+)\/([0-9]+)/) as string[];
-    return { orderDate: `${m[3]}-${m[2]}-${m[1]}`, sales: d["Sales"] };
-  });
-const salesByDate: DataItem[] = Object.values(
-  dataUngrouped.reduce((p: { [date: string]: DataItem }, c: DataItem) => {
-    let key = c.orderDate.slice(0, 7);
-    let d = p[key];
-    if (!d) {
-      d = { orderDate: key + "-01", sales: 0 };
-      p[key] = d;
-    }
-    d.sales += c.sales;
-    return p;
-  }, {})
-);
-salesByDate.sort((d1, d2) => (d1.orderDate < d2.orderDate ? -1 : 1));
-
 (window as any).superstoreSalesData = salesByDate;
-console.log(salesByDate);
+// console.log(salesByDate);
+console.log(airlinePassengers);
 
 function Chart({ data, axis }: { data: any; axis: any }) {
   const ref = useRef(null);
@@ -52,17 +29,19 @@ function Chart({ data, axis }: { data: any; axis: any }) {
 function App() {
   const data = {
     x: "x",
-    xFormat: "%Y-%m-%d",
+    xFormat: "%Y-%m",
     columns: [
-      ["x", ...salesByDate.map((d) => d.orderDate)],
-      ["data1", ...salesByDate.map((d) => d.sales)],
+      // ["x", ...salesByDate.map((d) => d.orderDate)],
+      // ["data1", ...salesByDate.map((d) => d.sales)],
+      ["x", ...airlinePassengers.map((d) => d.Month)],
+      ["data1", ...airlinePassengers.map((d) => d.Passengers)],
     ],
   };
   const axis = {
     x: {
       type: "timeseries",
       tick: {
-        format: "%Y-%m-%d",
+        format: "%Y-%m",
       },
     },
   };
