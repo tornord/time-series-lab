@@ -1,15 +1,14 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import c3 from "c3";
 import "c3/c3.css";
 import * as math from "ts-math";
 import { RandomNumberGenerator } from "ts-math";
 
-import "./App.css";
 import { salesByDate } from "./SuperstoreSalesData";
 // import { airlinePassengers } from "./AirlinePassengersData";
-import { randomTimeSeries, ema, diff, rsi } from "./timeSeries";
+import { randomTimeSeries, ema, diff, rsi, TimeSeries, toChartProps } from "./timeSeries";
 import Table from "./Table";
-import sweco from "./data/ms/5647.json";
+import { universe } from "./data/universe";
 
 const rng = new RandomNumberGenerator("123");
 
@@ -20,11 +19,11 @@ const rng = new RandomNumberGenerator("123");
 // console.log(airlinePassengers);
 // const ts = randomTimeSeries(rng, "2020-12-05", "2021-09-05");
 // const ts2 = { dates: ts.dates.slice(), values: ts.values.map((d, i) => 100 - i + 2 * Math.floor(i / 3)) };
-const ts2 = { dates: sweco.history.map((d) => d.date), values: sweco.history.map((d) => d.closeprice) };
-const N = 14;
-const emas = ema(ts2.values, 2 / (N + 1));
-const ssmas = ema(ts2.values, 1 / N);
+const ts2: any = universe.find((d) => d.ticker === "SWEC B");
 const rsis = rsi(ts2.values);
+universe.forEach((d: any) => {
+  d.rsiValues = rsi(d.values);
+});
 
 function Chart({ data, axis }: { data: any; axis: any }) {
   const ref = useRef(null);
@@ -34,56 +33,45 @@ function Chart({ data, axis }: { data: any; axis: any }) {
       data,
       axis,
     });
-  }, []);
+  }, [data, axis]);
   return <div className="chart" ref={ref}></div>;
 }
 
 function App() {
-  const data = {
-    x: "x",
-    xFormat: "%Y-%m-%d",
-    columns: [
-      ["x", ...ts2.dates],
-      ["data1", ...ts2.values],
-    ],
-  };
-  const rsiData = {
-    x: "x",
-    xFormat: "%Y-%m-%d",
-    columns: [
-      ["x", ...ts2.dates],
-      ["data1", ...rsis],
-    ],
-  };
-  const axis = {
-    x: {
-      type: "timeseries",
-      tick: {
-        format: "%Y-%m-%d",
-      },
-    },
+  const [selectedIndex, setSelectedIndex] = useState(universe[0].dates.length-1);
+  const [selectedStock, setSelectedStock] = useState(universe[0]);
+  const rsis = rsi(selectedStock.values);
+  console.log(selectedStock);
+  const chartClick = (event: any, el: HTMLElement, ts: any) => {
+    // console.log("chartClick", args)
+    setSelectedIndex(event.index);
   };
   return (
     <div className="App">
-      <Chart {...{ data, axis }} />
-      <Chart {...{ data: rsiData, axis }} />
+      <Chart {...toChartProps(selectedStock, chartClick)} />
+      <Chart {...toChartProps({ name: "RSI", dates: selectedStock.dates, values: rsis }, chartClick)} />
+      <p>{universe[0].dates[selectedIndex]}</p>
       <Table
-        data={ts2.values.map((d, i) => ({
+        data={universe.map((d: any, i: number) => ({
+          name: d.name,
+          last: math.numberFormat(d.values[selectedIndex], "0.00"),
+          rsi: math.numberFormat(d.rsiValues[selectedIndex], "0.00"),
+        }))}
+        columns={["name", "last", "rsi"].map((d) => ({ key: d }))}
+        onClick={(event: any, stock: any, column: string) => {
+          const ts = universe.find((d) => d.name === stock.name);
+          setSelectedStock(ts as any);
+        }}
+      />
+      {/* <Table
+        data={ts2.values.map((d: number, i: number) => ({
           date: ts2.dates[i],
           value: math.numberFormat(d, "0.0000"),
-          emas: math.numberFormat(emas[i], "0.0000"),
-          ssmas: math.numberFormat(ssmas[i], "0.0000"),
           rsi: math.numberFormat(rsis[i], "0.0000"),
         }))}
-        columns={[
-          { key: "date" },
-          { key: "value" },
-          { key: "emas" },
-          { key: "ssmas" },
-          { key: "rsi" },
-        ]}
+        columns={["date", "value", "rsi"].map((d) => ({ key: d }))}
         onClick={null}
-      />
+      /> */}
     </div>
   );
 }

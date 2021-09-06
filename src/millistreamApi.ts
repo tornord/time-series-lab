@@ -217,7 +217,7 @@ export async function fetchFundamentals(
 }
 
 export async function fetchSingleHistory(insref: string, startDate: string): Promise<History> {
-  const fields = ["insref", "name", "date", "time", "closeprice", "closeyield", "closenav"];
+  const fields = ["insref", "name", "symbol", "date", "time", "closeprice", "closeyield", "closenav"];
   const url =
     `${baseUrl(CommandType.History)}` +
     `&insref=${insref}&startdate=${startDate}&adjusted=1&` +

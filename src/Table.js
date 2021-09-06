@@ -18,7 +18,7 @@ export default function Table({ data, columns, onClick }) {
       </thead>
       <tbody>
         {data.map((d, i) => (
-          <tr key={i}>
+          <tr key={i} className={i%2===0?"even":"odd"}>
             {columns.map((c, j) => (
               <td
                 key={j}

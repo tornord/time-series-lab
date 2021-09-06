@@ -3,6 +3,12 @@ import { RandomNumberGenerator } from "ts-math";
 
 const { exp, pow, round, sqrt } = Math;
 
+export interface TimeSeries {
+  name: string;
+  dates: string[];
+  values: number[];
+}
+
 function toDate(dateAsString: string) {
   return new Date(dateAsString);
 }
@@ -123,4 +129,26 @@ export function rsi(values: number[], N: number = 14) {
     res.push(rsi);
   }
   return res;
+}
+
+export function toChartProps(ts: TimeSeries, onClick: null | ((event: any, el: HTMLElement, ts: any) => void) = null) {
+  return {
+    data: {
+      x: "x",
+      xFormat: "%Y-%m-%d",
+      columns: [
+        ["x", ...ts.dates],
+        [ts.name, ...ts.values],
+      ],
+      onclick: (ev: any, el: HTMLElement) => {if (onClick) onClick(ev, el, ts); },
+    },
+    axis: {
+      x: {
+        type: "timeseries",
+        tick: {
+          format: "%Y-%m-%d",
+        },
+      },
+    },
+  };
 }

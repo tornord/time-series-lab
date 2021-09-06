@@ -1,5 +1,7 @@
 {
+  "MS_USER": "",
   "MS_USER_DELAYED": "",
   "MS_SECRET": "",
-  "MS_URL_DELAYED": "https://mwsbon.millistream.com"
+  "MS_URL_DELAYED": "",
+  "MS_URL": ""
 }

@@ -12220,10 +12220,10 @@
   "resolved" "https://registry.npmjs.org/tryer/-/tryer-1.0.1.tgz"
   "version" "1.0.1"
 
-"ts-math@^1.0.2":
-  "integrity" "sha512-zo1L9C2gKigEsuoSmjdVI0m9MfthRwlO3eVDFW8l3roTETQzGowoK5cvKLFdTn8nsspFJtjp5zTxIL+ustkRbg=="
-  "resolved" "https://registry.npmjs.org/ts-math/-/ts-math-1.0.2.tgz"
-  "version" "1.0.2"
+"ts-math@^1.0.3":
+  "integrity" "sha512-XhztLft2fbt2UNNEn+MfecAMSF9WLWutZ/fr7XML9KMLY1yScdklhruKib3c4Y9mCL6wvSPXOyEs/GJtXCvnig=="
+  "resolved" "https://registry.npmjs.org/ts-math/-/ts-math-1.0.3.tgz"
+  "version" "1.0.3"
   dependencies:
     "fmin" "^0.0.2"
     "json-stable-stringify" "^1.0.1"
