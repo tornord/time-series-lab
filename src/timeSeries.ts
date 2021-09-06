@@ -108,3 +108,19 @@ export function ema(values: number[], alpha: number) {
   }
   return res;
 }
+
+export function rsi(values: number[], N: number = 14) {
+  const diffs = diff(values);
+  const ups = diffs.map((d, i) => Math.max(d, 0));
+  const downs = diffs.map((d, i) => Math.max(-d, 0));
+  const emaUps = ema(ups, 1 / N);
+  const emaDowns = ema(downs, 1 / N);
+  const res: number[] = [];
+  for (let i = 0; i < values.length; i++) {
+    const up = emaUps[i];
+    const down = emaDowns[i];
+    const rsi = 100 - (down === 0 ? (up === 0 ? 50 : 0) : 100 / (1 + up / down));
+    res.push(rsi);
+  }
+  return res;
+}

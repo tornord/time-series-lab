@@ -32,7 +32,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start:main": "ts-node --project ts-node.tsconfig.json src/main",
+    "start:fetch": "ts-node --project ts-node.tsconfig.json src/fetch",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
