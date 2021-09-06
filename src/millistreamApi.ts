@@ -70,14 +70,12 @@ export interface Fundamentals {
   fundamentals: FundamentalsItem[];
 }
 
+// const baseUrl = (cmd: CommandType): string =>
+//   `${config.MS_URL}/mws.fcgi?usr=${config.MS_USER}&pwd=${config.MS_SECRET}&cmd=${cmd}&filetype=json`;
 const baseUrl = (cmd: CommandType): string =>
   `${config.MS_URL_DELAYED}/mws.fcgi?usr=${config.MS_USER_DELAYED}&pwd=${config.MS_SECRET}&cmd=${cmd}&filetype=json`;
 
-export async function fetchInstruments(
-  lists: number[],
-  insrefs: string[],
-  fields: string[]
-): Promise<Instrument[]> {
+export async function fetchInstruments(lists: number[], insrefs: string[], fields: string[]): Promise<Instrument[]> {
   if (!fields) {
     fields = [
       "insref",
@@ -142,9 +140,7 @@ export async function fetchCalendarEvents(insrefs: string[]): Promise<CalendarEv
     "period",
     "symbol",
   ];
-  const url =
-    `${baseUrl(CommandType.Calendar)}` +
-    `&fields=${fields.join("%2C")}&insref=${insrefs.join(",")}`;
+  const url = `${baseUrl(CommandType.Calendar)}` + `&fields=${fields.join("%2C")}&insref=${insrefs.join(",")}`;
   const res = await fetch(url);
   return res;
 }
