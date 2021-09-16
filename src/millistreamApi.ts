@@ -40,9 +40,40 @@ export interface HistoryItem {
 }
 
 export interface History {
+  id: string
   insref: string;
   name: string;
+  symbol: string;
+  ticker: string;
   history: HistoryItem[];
+  measures: Measures;
+}
+
+
+type Vector = number[];
+
+export interface Measures {
+  dates: string[];
+  datesAsNumber: Vector;
+  values: Vector;
+  returns: Vector;
+  logReturns: Vector;
+  rsi14: Vector;
+  ema20: Vector;
+  ema40: Vector;
+  ema60: Vector;
+  sqr20: Vector;
+  sqr40: Vector;
+  sqr60: Vector;
+  kelly20: Vector;
+  kelly40: Vector;
+  kelly60: Vector;
+  pos20: Vector;
+  neg20: Vector;
+  pos40: Vector;
+  neg40: Vector;
+  pos60: Vector;
+  neg60: Vector;
 }
 
 export interface Instrument {

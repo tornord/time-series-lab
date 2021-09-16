@@ -10,3 +10,23 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+.alignCenter {
+  text-align: center;
+  min-width: 80px;
+}
+
+.maxWidth {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--w140px {
+    max-width: 140px;
+  }
+
+  &--w260px {
+    max-width: 260px;
+  }
+}
+

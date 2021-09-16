@@ -1,4 +1,4 @@
-import superstoreSalesData from "./data/superstore-sales-data.json";
+import superstoreSalesData from "./superstore-sales-data.json";
 
 interface SuperstoreSalesDataItem {
   orderDate: string;
