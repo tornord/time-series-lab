@@ -54,8 +54,8 @@ import intc from "./ms/75294.json";
 import aapl from "./ms/75250.json";
 import amzn from "./ms/75247.json";
 
-import { History } from "../millistreamApi";
-import { calcMeasures } from "../timeSeries";
+import { History, HistoryItem } from "../millistreamApi";
+import { calcMeasures, TimeSeries } from "../timeSeries";
 
 const names: any[] = [];
 names.push(seba, shba, dnb, danske, aza);
@@ -69,11 +69,18 @@ names.push(azn, getib, pfe);
 names.push(eqt, indt, inveb);
 names.push(msft, fb, intc, aapl, amzn);
 
+export function historyToTimeSeries(historyItems: HistoryItem[]): TimeSeries {
+  const dates = historyItems.map((e: HistoryItem) => e.date);
+  const values = historyItems.map((e: HistoryItem) => e.closeprice);
+  return { dates, values };
+}
+
 export function getUniverse(): History[] {
-  names.forEach((d: History) => {
-    d.measures = calcMeasures(d.history);
-    d.id = String(d.insref);
-    d.ticker = d.symbol;
+  names.forEach((h: History) => {
+    // const ts = historyToTimeSeries(h.history);
+    // h.measures = calcMeasures(ts);
+    h.id = String(h.insref);
+    h.ticker = h.symbol;
   });
   return names;
 }

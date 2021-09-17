@@ -1,6 +1,8 @@
 import fs from "fs";
+import { historyToTimeSeries } from "./data/universe";
 
-import { fetchHistory, HistoryItem, Measures } from "./millistreamApi";
+import { fetchHistory } from "./millistreamApi";
+import { calcMeasures } from "./timeSeries";
 // import { accumulate, ema, rsi } from "./timeSeries";
 
 const { log } = Math;
@@ -48,8 +50,10 @@ const ids = [
 async function main() {
   const res = await fetchHistory(ids, "2020-08-01");
   for (let h of res) {
-    // h.measures = calcMeasures(h.history);
+    const ts = historyToTimeSeries(h.history);
+    h.measures = calcMeasures(ts);
     fs.writeFileSync(`./src/data/ms/${h.insref}.json`, JSON.stringify(h, null, 2), "utf-8");
+    console.log(`${h.name} done`);
   }
 }
 

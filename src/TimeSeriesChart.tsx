@@ -8,11 +8,12 @@ interface TimeSeriesChartProps {
   height?: number;
   dates: string[];
   values: number[];
-  onMouseMove: (index: number, date: string) => void;
+  onMouseMove?: (index: number, date: string) => void;
   startDate: string | null;
   endDate: string | null;
   minValue?: number;
   maxValue?: number;
+  logarithmic?: boolean;
 }
 
 export function TimeSeriesChart({
@@ -25,6 +26,7 @@ export function TimeSeriesChart({
   endDate,
   minValue,
   maxValue,
+  logarithmic,
 }: TimeSeriesChartProps) {
   width = width ?? 600;
   height = height ?? 300;
@@ -43,10 +45,8 @@ export function TimeSeriesChart({
   const minMaxValues = minMax(values);
   const minValueWithMargin = minValue ?? minMaxValues[0] - yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
   const maxValueWithMargin = maxValue ?? minMaxValues[1] + yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
-  const yScale = d3
-    .scaleLinear()
-    .domain([minValueWithMargin, maxValueWithMargin])
-    .range([height - xAxisHeight - marginTop, marginTop]);
+  const yScale = logarithmic === true ? d3.scaleLog() : d3.scaleLinear();
+  yScale.domain([minValueWithMargin, maxValueWithMargin]).range([height - xAxisHeight - marginTop, marginTop]);
   const yTicks = yScale.ticks(5);
   const startDateAsNumber = new Date(startDate ?? dates[0]).getTime();
   const endDateAsNumber = new Date(endDate ?? dates[dates.length - 1]).getTime();
@@ -98,7 +98,12 @@ export function TimeSeriesChart({
         {yTicks.map((d, i) => (
           <g key={i} transform={`translate(${0},${yScale(d)})`}>
             <line x1="0" y1="0" x2={width} y2="0" stroke={textColor} strokeWidth="1" strokeDasharray="4,3" />
-            <text x={(width as number) - 1} y={-2} textAnchor="end" style={{ fontSize, color: fontColor, fill: fontColor }}>
+            <text
+              x={(width as number) - 1}
+              y={-2}
+              textAnchor="end"
+              style={{ fontSize, color: fontColor, fill: fontColor }}
+            >
               {d.toFixed(0)}
             </text>
           </g>
@@ -116,6 +121,17 @@ export function TimeSeriesChart({
   );
 }
 
-function minMax(vs: number[]) {
-  return [Math.min(...vs), Math.max(...vs)];
+export function minMax(vs: number[]) {
+  let vMin = Number.NaN;
+  let vMax = Number.NaN;
+  for (let i = 0; i < vs.length; i++) {
+    const v = vs[i];
+    if (Number.isNaN(vMin) || v < vMin) {
+      vMin = v;
+    }
+    if (Number.isNaN(vMax) || v > vMax) {
+      vMax = v;
+    }
+  }
+  return [vMin, vMax];
 }

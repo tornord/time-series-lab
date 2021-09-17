@@ -11,7 +11,7 @@ export function toChartProps(ts: TimeSeries, onClick: null | ((event: any, el: H
       xFormat: "%Y-%m-%d",
       columns: [
         ["x", ...ts.dates],
-        [ts.name, ...ts.values],
+        [(ts as any).name, ...ts.values],
       ],
       onclick: (ev: any, el: HTMLElement) => {
         if (onClick) onClick(ev, el, ts);

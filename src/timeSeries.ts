@@ -1,15 +1,12 @@
-import { isNumber } from "lodash";
 import * as math from "ts-math";
 import { fmin, numeric, RandomNumberGenerator, sqr } from "ts-math";
 import { PCA } from "ml-pca";
-import { HistoryItem, Measures } from "./millistreamApi";
 import {fminLossFun} from "./logUtility"
 
 const { exp, pow, round, sqrt, log } = Math;
 export const MS_PER_DAY = 60 * 60 * 24 * 1000;
 
 export interface TimeSeries {
-  name: string;
   dates: string[];
   values: number[];
 }
@@ -17,6 +14,34 @@ export interface TimeSeries {
 export interface Trend {
   ks: number[];
   bs: number[];
+}
+
+export type Vector = number[];
+
+export interface Measures {
+  dates: string[];
+  datesAsNumber: Vector;
+  values: Vector;
+  logValues: Vector;
+  returns: Vector;
+  logReturns: Vector;
+  rsi14: Vector;
+  ema20: Vector;
+  ema40: Vector;
+  ema60: Vector;
+  sqr20: Vector;
+  sqr40: Vector;
+  sqr60: Vector;
+  kelly20: Vector;
+  kelly40: Vector;
+  kelly60: Vector;
+  trend20: Vector;
+  pos20: Vector;
+  neg20: Vector;
+  pos40: Vector;
+  neg40: Vector;
+  pos60: Vector;
+  neg60: Vector;
 }
 
 function toDate(dateAsString: string) {
@@ -38,12 +63,12 @@ function getDayOfWeek(date: string) {
   return toDate(date).getUTCDay();
 }
 
-function isBusinessDay(date: string) {
+export function isBusinessDay(date: string) {
   let w = getDayOfWeek(date);
   return w >= 1 && w <= 5;
 }
 
-function generateRandomTimeSeries(
+export function generateRandomTimeSeries(
   start: string,
   end: string,
   isBusinessDay: (date: string) => boolean,
@@ -147,7 +172,7 @@ export function rsi(values: number[], N: number = 14) {
   return res;
 }
 
-export function trend(vs: number[], alpha: number) {
+export function rollingTrend(vs: number[], alpha: number) {
   let swx = 0.0;
   let swx2 = 0.0;
   let sw = 0.0;
@@ -171,7 +196,7 @@ export function trend(vs: number[], alpha: number) {
     let k = i === 0 ? 0 : (swy * swx - swxy * sw) / a;
     let b = i === 0 ? y : (swxy * swx - swx2 * swy) / a;
     ks.push(k);
-    bs.push(b);
+    bs.push(b + k * i);
   }
   return { ks, bs }; // k*x + b = y
 }
@@ -240,38 +265,6 @@ export function synchronize(timeSeries: { dates: string[]; values: number[] }[])
   return res;
 }
 
-export function correlation2(dates1: string[], values1: number[], dates2: string[], values2: number[]) {
-  let n1 = 0;
-  let n2 = 0;
-  let v1p: number | null = null;
-  let v2p: number | null = null;
-  const xs = [];
-  const ys = [];
-  while (n1 < dates1.length && n2 < dates2.length) {
-    let d1 = dates1[n1];
-    let d2 = dates2[n2];
-    while (d1 < d2 && n1 < dates1.length) {
-      d1 = dates1[++n1];
-    }
-    while (d2 < d1 && n2 < dates2.length) {
-      d2 = dates2[++n2];
-    }
-    if (n1 >= dates1.length || n2 >= dates2.length) break;
-    if (d1 === d2) {
-      let v1 = Math.log(values1[n1++]);
-      let v2 = Math.log(values2[n2++]);
-      if (v1p !== null && v2p !== null) {
-        xs.push(v1 - v1p);
-        ys.push(v2 - v2p);
-      }
-      v1p = v1;
-      v2p = v2;
-    }
-  }
-  // return { xs, ys };
-  return math.corr(xs, ys);
-}
-
 export function correlation(timeSeries: { dates: string[]; values: number[] }[]) {
   const vss = synchronize(timeSeries).map((vs) => vs.map(Math.log));
   const logrets = vss.slice(1).map((vs, i) => vs.map((v, j) => v - vss[i][j]));
@@ -325,12 +318,13 @@ export function rollingKelly(rs: number[], alpha: number) {
   return res;
 }
 
-export function calcMeasures(history: HistoryItem[]) {
-  const dates = history.map((e: HistoryItem) => e.date);
-  const datesAsNumber = history.map((e: HistoryItem) => new Date(e.date).getTime());
-  const values = history.map((e: HistoryItem) => e.closeprice);
+export function calcMeasures(timeSeries: TimeSeries) {
+  const dates = timeSeries.dates.slice();
+  const values = timeSeries.values.slice();
+  const datesAsNumber = dates.map(d => new Date(d).getTime());
   const returns = accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal / pVal - 1));
-  const logReturns = accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? 0 : log(cVal / pVal)));
+  const logValues = accumulate(values, (pRes, pVal, cVal, i) => log(cVal));
+  const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
   const rsi14 = rsi(values);
   const ema20 = ema(returns, 2 / (20 + 1));
   const ema40 = ema(returns, 2 / (40 + 1));
@@ -341,6 +335,7 @@ export function calcMeasures(history: HistoryItem[]) {
   const kelly20 = rollingKelly(returns,2 / (20 + 1));
   const kelly40 = rollingKelly(returns,2 / (40 + 1));
   const kelly60 = rollingKelly(returns,2 / (60 + 1));
+  const {ks: trend20} = rollingTrend(logReturns, 2 / (20 + 1) )
   const pos20 = accumulate(ema20, (pRes, pVal, cVal, i) => (i === 0 ? (cVal >= 0 ? 1 : 0) : cVal >= 0 ? pRes + 1 : 0));
   const neg20 = accumulate(ema20, (pRes, pVal, cVal, i) => (i === 0 ? (cVal <= 0 ? 1 : 0) : cVal <= 0 ? pRes + 1 : 0));
   const pos40 = accumulate(ema40, (pRes, pVal, cVal, i) => (i === 0 ? (cVal >= 0 ? 1 : 0) : cVal >= 0 ? pRes + 1 : 0));
@@ -351,6 +346,7 @@ export function calcMeasures(history: HistoryItem[]) {
     dates,
     datesAsNumber,
     values,
+    logValues,
     returns,
     logReturns,
     rsi14,
@@ -363,6 +359,7 @@ export function calcMeasures(history: HistoryItem[]) {
     kelly20,
     kelly40,
     kelly60,
+    trend20,
     pos20,
     neg20,
     pos40,

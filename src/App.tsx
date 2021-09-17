@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as math from "ts-math";
-import { RandomNumberGenerator, numberFormatFun } from "ts-math";
 import { PCA } from "ml-pca";
 
 // import { salesByDate } from "./SuperstoreSalesData";
 // import { airlinePassengers } from "./AirlinePassengersData";
-import { indexOf, trend, Trend, correlation, stdev, synchronize, accumulate } from "./timeSeries";
-import Table, { Column } from "./Table";
+import {
+  indexOf,
+  correlation,
+  stdev,
+  synchronize,
+  generateRandomTimeSeries,
+  isBusinessDay,
+  accumulate,
+} from "./timeSeries";
+import Grid, { Column } from "./Grid";
 import { getUniverse } from "./data/universe";
-import { TimeSeriesChart } from "./TimeSeriesChart";
+import { minMax, TimeSeriesChart } from "./TimeSeriesChart";
 import { History } from "./millistreamApi";
+import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import { RandomNumberGenerator } from "ts-math";
+
+const { min, max, log, sqrt, exp } = Math;
 
 // const rng = new RandomNumberGenerator("123");
 
@@ -64,6 +75,7 @@ for (let i = 0; i < universe.length; i++) {
 }
 // const corrPos = calcCorrPositions(corrs);
 // console.log(corrPos);
+let minMaxRatio = Number.NaN;
 universe.forEach((d: History, i: number) => {
   d.measures.dates.forEach((d: string) => {
     if (!startDate || d < startDate) {
@@ -73,6 +85,13 @@ universe.forEach((d: History, i: number) => {
       endDate = d;
     }
   });
+
+  const minmax = minMax(d.measures.values);
+  const md = minmax[1] / minmax[0];
+  if (Number.isNaN(minMaxRatio) || md > minMaxRatio) {
+    minMaxRatio = md;
+    console.log(d.name, minMaxRatio)
+  }
 
   const cs = corrs[i];
   const peers = cs
@@ -103,8 +122,8 @@ function toColumns(data: any[]): Column[] {
       if (key.startsWith("sqr")) {
         format = "0.000%";
       }
-      if (key.startsWith("kelly")) {
-        format = "0.00";
+      if (key.startsWith("trend")) {
+        format = "0.00%";
       }
     }
     if (key === "peers") {
@@ -118,9 +137,9 @@ function toColumns(data: any[]): Column[] {
   return res;
 }
 
-function App() {
-  const u0ms = universe[0].measures;
-  const [selectedDate, setSelectedDate] = useState(u0ms.dates[u0ms.dates.length - 1]);
+function StartView() {
+  const ms = universe[0].measures;
+  const [selectedDate, setSelectedDate] = useState(ms.dates[ms.dates.length - 1]);
   const [selectedStock, setSelectedStock] = useState(universe[0]);
   // const dateIndex = indexOf(new Date(selectedDate).getTime(), selectedStock.measures.datesAsNumber);
   const tableData = universe.map((d: History, i: number) => {
@@ -130,12 +149,16 @@ function App() {
       name: d.name,
       last: d.measures.values[index],
     };
-    ["rsi14", "ema20", "ema60", "sqr20", "sqr60", "kelly20", "kelly40","kelly60" ].forEach((k) => {
+    ["rsi14", "ema20", "ema60", "sqr20", "sqr60", "kelly20", "kelly40", "kelly60", "trend20"].forEach((k) => {
       res[k] = (d.measures as any)[k][index];
     });
     // res.peers = d.peers.map((e) => `${e.stock.ticker} - ${math.numberFormat(e.correlation, "0%")}`).join(", ");
     return res;
   });
+  const minmax = minMax(selectedStock.measures.logValues);
+  const mid = exp((minmax[0] + minmax[1]) / 2);
+  const maxValue = mid * sqrt(minMaxRatio*1.2);
+  const minValue = mid / sqrt(minMaxRatio*1.2);
   console.log(selectedDate);
   return (
     <div className="App">
@@ -149,6 +172,8 @@ function App() {
         }}
         startDate={startDate}
         endDate={endDate}
+        minValue={minValue}
+        maxValue={maxValue}
       />
       <TimeSeriesChart
         height={150}
@@ -170,8 +195,8 @@ function App() {
       <p>{selectedDate}</p>
       <p>{selectedStock.name}</p>
       {/* <p>{(selectedStock.trend as Trend).ks[dateIndex]}</p>
-      <p>{(selectedStock.trend as Trend).bs[dateIndex]}</p> */}
-      <Table
+  <p>{(selectedStock.trend as Trend).bs[dateIndex]}</p> */}
+      <Grid
         data={tableData}
         columns={toColumns(tableData)}
         onClick={(event: any, stock: any, column: string) => {
@@ -180,15 +205,58 @@ function App() {
         }}
       />
       {/* <Table
-        data={ts2.values.map((d: number, i: number) => ({
-          date: ts2.dates[i],
-          value: math.numberFormat(d, "0.0000"),
-          rsi: math.numberFormat(rsis[i], "0.0000"),
-        }))}
-        columns={["date", "value", "rsi"].map((d) => ({ key: d }))}
-        onClick={null}
-      /> */}
+    data={ts2.values.map((d: number, i: number) => ({
+      date: ts2.dates[i],
+      value: math.numberFormat(d, "0.0000"),
+      rsi: math.numberFormat(rsis[i], "0.0000"),
+    }))}
+    columns={["date", "value", "rsi"].map((d) => ({ key: d }))}
+    onClick={null}
+  /> */}
     </div>
+  );
+}
+
+function ChartTest() {
+  const startDate = "2020-08-01";
+  const endDate = "2021-09-17";
+  const timeSeries = useMemo(() => {
+    return generateRandomTimeSeries(startDate, endDate, isBusinessDay, 0.1, 0.2, 0, Date.now().toFixed());
+  }, []);
+  const logValues = accumulate(timeSeries.values, (pRes, pVal, cVal, i) => log(cVal));
+
+  const minMaxRatio = 1.5;
+  const minmax = minMax(logValues);
+  const mid = exp((minmax[0] + minmax[1]) / 2);
+  const maxValue = mid * sqrt(minMaxRatio);
+  const minValue = mid / sqrt(minMaxRatio);
+  console.log(maxValue / minValue);
+
+  return (
+    <TimeSeriesChart
+      dates={timeSeries.dates}
+      values={timeSeries.values}
+      startDate={startDate}
+      endDate={endDate}
+      logarithmic={true}
+      minValue={minValue}
+      maxValue={maxValue}
+    />
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Switch>
+        <Route path="/test">
+          <ChartTest />
+        </Route>
+        <Route path="/">
+          <StartView />
+        </Route>
+      </Switch>
+    </Router>
   );
 }
 
