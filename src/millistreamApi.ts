@@ -41,7 +41,7 @@ export interface HistoryItem {
 }
 
 export interface History {
-  id: string
+  id: string;
   insref: string;
   name: string;
   symbol: string;
@@ -79,6 +79,8 @@ export interface Fundamentals {
 //   `${config.MS_URL}/mws.fcgi?usr=${config.MS_USER}&pwd=${config.MS_SECRET}&cmd=${cmd}&filetype=json`;
 const baseUrl = (cmd: CommandType): string =>
   `${config.MS_URL_DELAYED}/mws.fcgi?usr=${config.MS_USER_DELAYED}&pwd=${config.MS_SECRET}&cmd=${cmd}&filetype=json`;
+
+// https://mws.millistream.com/mws.fcgi?usr=${config.MS_USER}&pwd=${config.MS_SECRET}&cmd=quote&filetype=json&list=35207&fields=name,symbol,diff1d,diff1dprc,lastprice,totalnumberofshares,sector&instrumenttype=4&timezone=Europe%2FStockholm
 
 export async function fetchInstruments(lists: number[], insrefs: string[], fields: string[]): Promise<Instrument[]> {
   if (!fields) {
@@ -145,7 +147,7 @@ export async function fetchCalendarEvents(insrefs: string[]): Promise<CalendarEv
     "period",
     "symbol",
   ];
-  const url = `${baseUrl(CommandType.Calendar)}` + `&fields=${fields.join("%2C")}&insref=${insrefs.join(",")}`;
+  const url = `${baseUrl(CommandType.Calendar)}&fields=${fields.join("%2C")}&insref=${insrefs.join(",")}`;
   const res = await fetch(url);
   return res;
 }

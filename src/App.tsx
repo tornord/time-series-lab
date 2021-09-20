@@ -4,21 +4,15 @@ import { PCA } from "ml-pca";
 
 // import { salesByDate } from "./SuperstoreSalesData";
 // import { airlinePassengers } from "./AirlinePassengersData";
-import {
-  indexOf,
-  correlation,
-  stdev,
-  synchronize,
-  generateRandomTimeSeries,
-  isBusinessDay,
-  accumulate,
-} from "./timeSeries";
+import { indexOf, correlation, synchronize, generateRandomTimeSeries, isBusinessDay, accumulate } from "./timeSeries";
 import Grid, { Column } from "./Grid";
 import { getUniverse } from "./data/universe";
 import { minMax, TimeSeriesChart } from "./TimeSeriesChart";
 import { History } from "./millistreamApi";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import { RandomNumberGenerator } from "ts-math";
+import { RandomNumberGenerator, stdev } from "ts-math";
+import { ChartTest } from "./ChartTest";
+import { TrendTest } from "./TrendTest";
 
 const { min, max, log, sqrt, exp } = Math;
 
@@ -70,7 +64,7 @@ const scatterData = {
 };
 for (let i = 0; i < universe.length; i++) {
   const u1 = universe[i];
-  const s = stdev(u1.measures.values);
+  const s = stdev(u1.measures.logReturns);
   stdevs.push(s);
 }
 // const corrPos = calcCorrPositions(corrs);
@@ -90,7 +84,7 @@ universe.forEach((d: History, i: number) => {
   const md = minmax[1] / minmax[0];
   if (Number.isNaN(minMaxRatio) || md > minMaxRatio) {
     minMaxRatio = md;
-    console.log(d.name, minMaxRatio)
+    console.log(d.name, minMaxRatio);
   }
 
   const cs = corrs[i];
@@ -116,7 +110,7 @@ function toColumns(data: any[]): Column[] {
       if (key.startsWith("pos") || key.startsWith("neg")) {
         format = "0";
       }
-      if (key.startsWith("ema")) {
+      if (key.startsWith("ema") || key.startsWith("fwd")) {
         format = "0.00%";
       }
       if (key.startsWith("sqr")) {
@@ -149,7 +143,7 @@ function StartView() {
       name: d.name,
       last: d.measures.values[index],
     };
-    ["rsi14", "ema20", "ema60", "sqr20", "sqr60", "kelly20", "kelly40", "kelly60", "trend20"].forEach((k) => {
+    ["fwd5", "rsi14", "ema20", "ema60", "sqr20", "sqr60", "kelly20", "kelly40", "kelly60", "trend20"].forEach((k) => {
       res[k] = (d.measures as any)[k][index];
     });
     // res.peers = d.peers.map((e) => `${e.stock.ticker} - ${math.numberFormat(e.correlation, "0%")}`).join(", ");
@@ -157,14 +151,13 @@ function StartView() {
   });
   const minmax = minMax(selectedStock.measures.logValues);
   const mid = exp((minmax[0] + minmax[1]) / 2);
-  const maxValue = mid * sqrt(minMaxRatio*1.2);
-  const minValue = mid / sqrt(minMaxRatio*1.2);
+  const maxValue = mid * sqrt(minMaxRatio * 1.2);
+  const minValue = mid / sqrt(minMaxRatio * 1.2);
   console.log(selectedDate);
   return (
     <div className="App">
       <TimeSeriesChart
-        dates={selectedStock.measures.dates}
-        values={selectedStock.measures.values}
+        series={[selectedStock.measures]}
         onMouseMove={(index, date) => {
           if (date && date !== selectedDate) {
             setSelectedDate(date);
@@ -177,8 +170,7 @@ function StartView() {
       />
       <TimeSeriesChart
         height={150}
-        dates={selectedStock.measures.dates}
-        values={selectedStock.measures.rsi14 as number[]}
+        series={[{ dates: selectedStock.measures.dates, values: selectedStock.measures.rsi14 }]}
         onMouseMove={(index, date) => {
           if (date && date !== selectedDate) {
             setSelectedDate(date);
@@ -217,40 +209,15 @@ function StartView() {
   );
 }
 
-function ChartTest() {
-  const startDate = "2020-08-01";
-  const endDate = "2021-09-17";
-  const timeSeries = useMemo(() => {
-    return generateRandomTimeSeries(startDate, endDate, isBusinessDay, 0.1, 0.2, 0, Date.now().toFixed());
-  }, []);
-  const logValues = accumulate(timeSeries.values, (pRes, pVal, cVal, i) => log(cVal));
-
-  const minMaxRatio = 1.5;
-  const minmax = minMax(logValues);
-  const mid = exp((minmax[0] + minmax[1]) / 2);
-  const maxValue = mid * sqrt(minMaxRatio);
-  const minValue = mid / sqrt(minMaxRatio);
-  console.log(maxValue / minValue);
-
-  return (
-    <TimeSeriesChart
-      dates={timeSeries.dates}
-      values={timeSeries.values}
-      startDate={startDate}
-      endDate={endDate}
-      logarithmic={true}
-      minValue={minValue}
-      maxValue={maxValue}
-    />
-  );
-}
-
 function App() {
   return (
     <Router>
       <Switch>
-        <Route path="/test">
+        <Route path="/charttest">
           <ChartTest />
+        </Route>
+        <Route path="/trend">
+          <TrendTest />
         </Route>
         <Route path="/">
           <StartView />

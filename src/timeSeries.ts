@@ -1,7 +1,7 @@
 import * as math from "ts-math";
 import { fmin, numeric, RandomNumberGenerator, sqr } from "ts-math";
 import { PCA } from "ml-pca";
-import {fminLossFun} from "./logUtility"
+import { fminLossFun } from "./logUtility";
 
 const { exp, pow, round, sqrt, log } = Math;
 export const MS_PER_DAY = 60 * 60 * 24 * 1000;
@@ -36,6 +36,7 @@ export interface Measures {
   kelly40: Vector;
   kelly60: Vector;
   trend20: Vector;
+  fwd5: Vector;
   pos20: Vector;
   neg20: Vector;
   pos40: Vector;
@@ -44,7 +45,7 @@ export interface Measures {
   neg60: Vector;
 }
 
-function toDate(dateAsString: string) {
+export function toDate(dateAsString: string) {
   return new Date(dateAsString);
 }
 
@@ -52,7 +53,7 @@ export function dateToString(d: Date) {
   return d.toISOString().substring(0, 10);
 }
 
-function addDays(date: string, days: number) {
+export function addDays(date: string, days: number) {
   const d = toDate(date);
   let res = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + days, 0, 0, 0));
   res.setUTCHours(0, 0, 0, 0);
@@ -71,7 +72,7 @@ export function isBusinessDay(date: string) {
 export function generateRandomTimeSeries(
   start: string,
   end: string,
-  isBusinessDay: (date: string) => boolean,
+  isBusinessDay: ((date: string) => boolean) | null,
   yearlyreturn: number,
   yearlyvolatility: number,
   autocorrelation: number,
@@ -82,14 +83,14 @@ export function generateRandomTimeSeries(
   const dates: string[] = [];
   const values: number[] = [];
   let n = 252.0;
-  while (!isBusinessDay(d)) {
+  while (isBusinessDay ? !isBusinessDay(d) : false) {
     d = addDays(d, 1);
   }
   while (d <= end) {
     values.push(0);
     dates.push(d);
     d = addDays(d, 1);
-    while (!isBusinessDay(d)) {
+    while (isBusinessDay ? !isBusinessDay(d) : false) {
       d = addDays(d, 1);
     }
   }
@@ -236,11 +237,11 @@ function createVector(n: number, value: number): number[] {
   return [...Array(n)].map(() => value);
 }
 
-function toEpoch(date: string) {
+export function toEpoch(date: string) {
   return new Date(date).getTime();
 }
 
-function epochToString(t: number) {
+export function epochToString(t: number) {
   return dateToString(new Date(t));
 }
 
@@ -282,20 +283,20 @@ export function correlation(timeSeries: { dates: string[]; values: number[] }[])
   return res;
 }
 
-export function stdev(values: number[]) {
-  let n = 0;
-  let vp: number | null = null;
-  const xs = [];
-  while (n < values.length) {
-    let v = Math.log(values[n++]);
-    if (vp !== null) {
-      xs.push(v - vp);
-    }
-    vp = v;
-  }
-  // return { xs, ys };
-  return math.stdev(xs);
-}
+// export function stdev(values: number[]) {
+//   let n = 0;
+//   let vp: number | null = null;
+//   const xs = [];
+//   while (n < values.length) {
+//     let v = Math.log(values[n++]);
+//     if (vp !== null) {
+//       xs.push(v - vp);
+//     }
+//     vp = v;
+//   }
+//   // return { xs, ys };
+//   return math.stdev(xs);
+// }
 
 export function rollingKelly(rs: number[], alpha: number) {
   const n = rs.length;
@@ -321,7 +322,7 @@ export function rollingKelly(rs: number[], alpha: number) {
 export function calcMeasures(timeSeries: TimeSeries) {
   const dates = timeSeries.dates.slice();
   const values = timeSeries.values.slice();
-  const datesAsNumber = dates.map(d => new Date(d).getTime());
+  const datesAsNumber = dates.map((d) => new Date(d).getTime());
   const returns = accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal / pVal - 1));
   const logValues = accumulate(values, (pRes, pVal, cVal, i) => log(cVal));
   const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
@@ -332,10 +333,13 @@ export function calcMeasures(timeSeries: TimeSeries) {
   const sqr20 = ema(logReturns.map(sqr), 2 / (20 + 1));
   const sqr40 = ema(logReturns.map(sqr), 2 / (40 + 1));
   const sqr60 = ema(logReturns.map(sqr), 2 / (60 + 1));
-  const kelly20 = rollingKelly(returns,2 / (20 + 1));
-  const kelly40 = rollingKelly(returns,2 / (40 + 1));
-  const kelly60 = rollingKelly(returns,2 / (60 + 1));
-  const {ks: trend20} = rollingTrend(logReturns, 2 / (20 + 1) )
+  const kelly20 = rollingKelly(returns, 2 / (20 + 1));
+  const kelly40 = rollingKelly(returns, 2 / (40 + 1));
+  const kelly60 = rollingKelly(returns, 2 / (60 + 1));
+  const { ks: trend20 } = rollingTrend(logReturns, 2 / (20 + 1));
+  const emaLag = (values: number[], alpha: number) =>
+    accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? cVal : (1 - alpha) * pRes + alpha * pVal));
+  const fwd5 = emaLag(returns.reverse(), 2 / (5 + 1)).reverse();
   const pos20 = accumulate(ema20, (pRes, pVal, cVal, i) => (i === 0 ? (cVal >= 0 ? 1 : 0) : cVal >= 0 ? pRes + 1 : 0));
   const neg20 = accumulate(ema20, (pRes, pVal, cVal, i) => (i === 0 ? (cVal <= 0 ? 1 : 0) : cVal <= 0 ? pRes + 1 : 0));
   const pos40 = accumulate(ema40, (pRes, pVal, cVal, i) => (i === 0 ? (cVal >= 0 ? 1 : 0) : cVal >= 0 ? pRes + 1 : 0));
@@ -360,6 +364,7 @@ export function calcMeasures(timeSeries: TimeSeries) {
     kelly40,
     kelly60,
     trend20,
+    fwd5,
     pos20,
     neg20,
     pos40,

@@ -1,26 +1,57 @@
-import moment from "moment";
 import * as d3 from "d3";
 import * as math from "ts-math";
-import { dateToString, indexOf } from "./timeSeries";
+import { dateToString, indexOf, TimeSeries, toEpoch } from "./timeSeries";
+
+interface Series {
+  dates: string[];
+  values: number[];
+  color?: string;
+  strokeWidth?: number;
+  fillColor?: string;
+}
 
 interface TimeSeriesChartProps {
   width?: number;
   height?: number;
-  dates: string[];
-  values: number[];
+  series: Series[];
   onMouseMove?: (index: number, date: string) => void;
-  startDate: string | null;
-  endDate: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   minValue?: number;
   maxValue?: number;
   logarithmic?: boolean;
 }
 
+interface Point {
+  date: number;
+  value: number;
+}
+
+interface Trace {
+  d: string;
+  series: Series;
+}
+
+const round2 = (x: number) => math.round(x, 2);
+
+function createPathD(
+  { dates, values }: TimeSeries,
+  xScale: d3.ScaleTime<number, number>,
+  yScale: d3.ScaleLinear<number, number> | d3.ScaleLogarithmic<number, number>
+) {
+  const points: Point[] = dates.map((d, i) => ({ date: toEpoch(d), value: values[i] }));
+  const lineXValue = (d: any, i: number) => round2(xScale(d.date));
+  const lineYValue = (d: any, i: number) => round2(yScale(d.value));
+  const line = d3.line().x(lineXValue).y(lineYValue);
+  return line(points as any[]);
+}
+
+const isNumber = (x: any) => typeof x === "number";
+
 export function TimeSeriesChart({
   width,
   height,
-  dates,
-  values,
+  series,
   onMouseMove,
   startDate,
   endDate,
@@ -35,30 +66,44 @@ export function TimeSeriesChart({
   const marginRight = 33.5;
   const xAxisHeight = 24.5;
   const textColor = "rgb(232, 213, 206)";
-  const traceColor = "rgb(10,101,158)";
+  const traceColors = ["rgb(10, 101, 158)", "hsl(122deg 88% 33%)"];
   const xTickSize = 5;
   const fontSize = 11;
   const fontColor = "#789";
   const yRelativeMargin = 0.12;
 
-  const data = dates.map((d, i) => ({ date: d, value: values[i] }));
-  const minMaxValues = minMax(values);
-  const minValueWithMargin = minValue ?? minMaxValues[0] - yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
-  const maxValueWithMargin = maxValue ?? minMaxValues[1] + yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
+  // const data = dates.map((d, i) => ({ date: d, value: values[i] }));
+  for (let index = 0; index < series.length; index++) {
+    const { dates, values } = series[0];
+    const minMaxValues = minMax(values);
+    const minv = minMaxValues[0] - yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
+    const maxv = minMaxValues[1] + yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
+    if (!isNumber(minValue) || minv < (minValue as number)) {
+      minValue = minv;
+    }
+    if (!isNumber(maxValue) || maxv > (maxValue as number)) {
+      maxValue = maxv;
+    }
+    if (!startDate || dates[0] < startDate) {
+      startDate = dates[0];
+    }
+    if (!endDate || dates[dates.length - 1] > endDate) {
+      endDate = dates[dates.length - 1];
+    }
+  }
   const yScale = logarithmic === true ? d3.scaleLog() : d3.scaleLinear();
-  yScale.domain([minValueWithMargin, maxValueWithMargin]).range([height - xAxisHeight - marginTop, marginTop]);
+  yScale.domain([minValue as number, maxValue as number]).range([height - xAxisHeight - marginTop, marginTop]);
   const yTicks = yScale.ticks(5);
-  const startDateAsNumber = new Date(startDate ?? dates[0]).getTime();
-  const endDateAsNumber = new Date(endDate ?? dates[dates.length - 1]).getTime();
   const xScale = d3
     .scaleTime()
-    .domain([startDateAsNumber, endDateAsNumber])
+    .domain([toEpoch(startDate as string), toEpoch(endDate as string)])
     .range([marginLeft, width - marginRight]);
   const xTicks = xScale.ticks(5);
-  const lineXValue = (d: any, i: number) => math.round(xScale(new Date(d.date).getTime()), 2);
-  const lineYValue = (d: any, i: number) => math.round(yScale(d.value), 2);
-  const line = d3.line().x(lineXValue).y(lineYValue);
-  const tracePathD = line(data as any[]);
+  const traces: Trace[] = [];
+  for (let i = 0; i < series.length; i++) {
+    const s = series[i];
+    traces.push({ d: createPathD(s, xScale, yScale) as string, series: s });
+  }
 
   // console.log(minValue, maxValue, yScale(minValue), yScale(maxValue), yTicks);
   return (
@@ -70,7 +115,7 @@ export function TimeSeriesChart({
         const date = dateToString(new Date(xScale.invert(x)));
         const index = indexOf(
           new Date(date).getTime(),
-          dates.map((d) => new Date(d).getTime())
+          series[0].dates.map((d) => new Date(d).getTime())
         );
         if (onMouseMove) {
           onMouseMove(index, date);
@@ -109,14 +154,17 @@ export function TimeSeriesChart({
           </g>
         ))}
       </g>
-      <path
-        d={tracePathD as string}
-        fill="none"
-        stroke={traceColor}
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
+      {traces.map((trace: Trace, i: number) => (
+        <path
+          key={i}
+          d={trace.d as string}
+          fill={trace.series.fillColor ?? "none"}
+          stroke={trace.series.color ?? traceColors[i % traceColors.length]}
+          strokeWidth={trace.series.strokeWidth ?? 2}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      ))}
     </svg>
   );
 }

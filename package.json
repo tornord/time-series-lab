@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@supercharge/promise-pool": "^1.7.0",
+    "ascii-table": "^0.0.9",
     "c3": "^0.7.20",
     "d3": "^7.0.1",
     "exp-asynccache": "^2.0.0",

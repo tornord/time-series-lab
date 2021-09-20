@@ -3,9 +3,6 @@ import { historyToTimeSeries } from "./data/universe";
 
 import { fetchHistory } from "./millistreamApi";
 import { calcMeasures } from "./timeSeries";
-// import { accumulate, ema, rsi } from "./timeSeries";
-
-const { log } = Math;
 
 const ids = [
   "104",
