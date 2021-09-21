@@ -1,7 +1,8 @@
-import { numeric, RandomNumberGenerator, round, sqr, } from "ts-math";
-import { createNormalSamplesOneDim } from "./logUtility";
-import { addDays, ema, generateRandomTimeSeries  } from "./timeSeries";
 import AsciiTable from "ascii-table";
+import { numeric, RandomNumberGenerator, sqr } from "ts-math";
+import { createNormalSamplesOneDim } from "./logUtility";
+import { ema, generateRandomTimeSeries } from "./timeSeries";
+import { addDays } from "./dateHelper";
 
 const { pow, sqrt, log, abs, exp } = Math;
 
@@ -46,8 +47,6 @@ export function trend(vs: number[], alpha: number) {
   return { ks, bs };
 }
 
-const round2 = (x) => round(x, 2);
-const round2arr = (xs) => xs.map(round2);
 // const transpose = (arrays) => arrays[0].map((_, j) => [arrays.map((d) => d[j])]);
 const skipDebug = false;
 

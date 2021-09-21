@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import * as math from "ts-math";
-import { dateToString, indexOf, TimeSeries, toEpoch } from "./timeSeries";
+import { dateToString, toEpoch } from "./dateHelper";
+import { indexOf, minMax, TimeSeries } from "./timeSeries";
 
 interface Series {
   dates: string[];
@@ -167,19 +168,4 @@ export function TimeSeriesChart({
       ))}
     </svg>
   );
-}
-
-export function minMax(vs: number[]) {
-  let vMin = Number.NaN;
-  let vMax = Number.NaN;
-  for (let i = 0; i < vs.length; i++) {
-    const v = vs[i];
-    if (Number.isNaN(vMin) || v < vMin) {
-      vMin = v;
-    }
-    if (Number.isNaN(vMax) || v > vMax) {
-      vMax = v;
-    }
-  }
-  return [vMin, vMax];
 }

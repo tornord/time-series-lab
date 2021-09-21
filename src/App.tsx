@@ -3,10 +3,10 @@ import { PCA } from "ml-pca";
 
 // import { salesByDate } from "./SuperstoreSalesData";
 // import { airlinePassengers } from "./AirlinePassengersData";
-import { indexOf, correlation, synchronize } from "./timeSeries";
+import { indexOf, correlation, synchronize, minMax } from "./timeSeries";
 import Grid, { Column } from "./Grid";
 import { getUniverse } from "./data/universe";
-import { minMax, TimeSeriesChart } from "./TimeSeriesChart";
+import { TimeSeriesChart } from "./TimeSeriesChart";
 import { History } from "./millistreamApi";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { stdev } from "ts-math";
