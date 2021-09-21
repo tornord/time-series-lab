@@ -1,20 +1,19 @@
-import { useMemo, useState } from "react";
-import * as math from "ts-math";
+import { useState } from "react";
 import { PCA } from "ml-pca";
 
 // import { salesByDate } from "./SuperstoreSalesData";
 // import { airlinePassengers } from "./AirlinePassengersData";
-import { indexOf, correlation, synchronize, generateRandomTimeSeries, isBusinessDay, accumulate } from "./timeSeries";
+import { indexOf, correlation, synchronize } from "./timeSeries";
 import Grid, { Column } from "./Grid";
 import { getUniverse } from "./data/universe";
 import { minMax, TimeSeriesChart } from "./TimeSeriesChart";
 import { History } from "./millistreamApi";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import { RandomNumberGenerator, stdev } from "ts-math";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { stdev } from "ts-math";
 import { ChartTest } from "./ChartTest";
 import { TrendTest } from "./TrendTest";
 
-const { min, max, log, sqrt, exp } = Math;
+const { sqrt, exp } = Math;
 
 // const rng = new RandomNumberGenerator("123");
 
@@ -216,7 +215,7 @@ function App() {
         <Route path="/charttest">
           <ChartTest />
         </Route>
-        <Route path="/trend">
+        <Route path="/trend/:type/:seed">
           <TrendTest />
         </Route>
         <Route path="/">
