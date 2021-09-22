@@ -1,21 +1,14 @@
 import * as d3 from "d3";
 import * as math from "ts-math";
 import { dateToString, toEpoch } from "./dateHelper";
-import { indexOf, minMax, TimeSeries } from "./timeSeries";
-
-interface Series {
-  dates: string[];
-  values: number[];
-  color?: string;
-  strokeWidth?: number;
-  fillColor?: string;
-}
+import { minMax, TimeSeries } from "./timeSeries";
+import { Series } from "./trend";
 
 interface TimeSeriesChartProps {
   width?: number;
   height?: number;
   series: Series[];
-  onMouseMove?: (index: number, date: string) => void;
+  onMouseMove?: (date: string) => void;
   startDate?: string | null;
   endDate?: string | null;
   minValue?: number;
@@ -71,27 +64,41 @@ export function TimeSeriesChart({
   const xTickSize = 5;
   const fontSize = 11;
   const fontColor = "#789";
-  const yRelativeMargin = 0.12;
+  const yRelativeMargin = 0.1;
 
   // const data = dates.map((d, i) => ({ date: d, value: values[i] }));
-  for (let index = 0; index < series.length; index++) {
+  let totMinV = Number.NaN;
+  let totMaxV = Number.NaN;
+  let totStartD = "";
+  let totEndD = "";
+  for (let i = 0; i < series.length; i++) {
     const { dates, values } = series[0];
     const minMaxValues = minMax(values);
     const minv = minMaxValues[0] - yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
     const maxv = minMaxValues[1] + yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
-    if (!isNumber(minValue) || minv < (minValue as number)) {
-      minValue = minv;
+    if (!isNumber(totMinV) || minv < totMinV) {
+      totMinV = minv;
     }
-    if (!isNumber(maxValue) || maxv > (maxValue as number)) {
-      maxValue = maxv;
+    if (!isNumber(totMaxV) || maxv > totMaxV) {
+      totMaxV = maxv;
     }
-    if (!startDate || dates[0] < startDate) {
-      startDate = dates[0];
+    if (!totStartD || dates[0] < totStartD) {
+      totStartD = dates[0];
     }
-    if (!endDate || dates[dates.length - 1] > endDate) {
-      endDate = dates[dates.length - 1];
+    if (!totEndD || dates[dates.length - 1] > totEndD) {
+      totEndD = dates[dates.length - 1];
     }
   }
+  if (!isNumber(minValue)) {
+    minValue = totMinV;
+  }  if (!isNumber(totMaxV)) {
+    maxValue = totMaxV;
+  }  if (!isNumber(totStartD)) {
+    startDate = totStartD;
+  }  if (!isNumber(totEndD)) {
+    endDate = totEndD;
+  }
+  console.log(minValue, maxValue);
   const yScale = logarithmic === true ? d3.scaleLog() : d3.scaleLinear();
   yScale.domain([minValue as number, maxValue as number]).range([height - xAxisHeight - marginTop, marginTop]);
   const yTicks = yScale.ticks(5);
@@ -114,12 +121,8 @@ export function TimeSeriesChart({
       onMouseMove={(e) => {
         const x = e.clientX;
         const date = dateToString(new Date(xScale.invert(x)));
-        const index = indexOf(
-          new Date(date).getTime(),
-          series[0].dates.map((d) => new Date(d).getTime())
-        );
         if (onMouseMove) {
-          onMouseMove(index, date);
+          onMouseMove(date);
         }
       }}
     >

@@ -20,7 +20,7 @@
     "react-router-dom": "^5.3.0",
     "react-scripts": "4.0.3",
     "seedrandom": "^3.0.5",
-    "ts-math": "^1.0.10",
+    "ts-math": "^1.0.11",
     "web-vitals": "^1.0.1"
   },
   "devDependencies": {

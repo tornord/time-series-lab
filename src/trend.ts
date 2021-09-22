@@ -18,6 +18,14 @@ export interface TrendSignal {
   b: number;
 }
 
+export interface Series {
+  dates: string[];
+  values: number[];
+  color?: string;
+  strokeWidth?: number;
+  fillColor?: string;
+}
+
 export function trend(vs: number[], alpha: number) {
   let swx = 0.0;
   let swx2 = 0.0;
@@ -48,7 +56,6 @@ export function trend(vs: number[], alpha: number) {
 }
 
 // const transpose = (arrays) => arrays[0].map((_, j) => [arrays.map((d) => d[j])]);
-const skipDebug = false;
 
 function toAsciiTable(arrays: number[][], heading: string[], decimals = null) {
   const rows = numeric.transpose(
@@ -72,7 +79,8 @@ export function trendStrength(
   ks: number[],
   bs: number[],
   meanSigmas: number,
-  breachBuffer: number
+  breachBuffer: number,
+  skipDebug: boolean = true
 ): TrendSignal {
   const xs = logValues.slice(0, endIndex + 1);
   const n = xs.length;
@@ -176,4 +184,19 @@ export function calcTrendSignals(
     trends[i] = res;
   }
   return trends;
+}
+
+export function trendToSerie(dates: string[], trendSignal: TrendSignal, meanSigmas: number, fillColor: string) {
+  const i0 = trendSignal.startIndex;
+  const i1 = trendSignal.endIndex;
+  const offset = meanSigmas * trendSignal.sigma;
+  const x1 = trendSignal.b;
+  const x0 = x1 - (i1 - i0) * trendSignal.k;
+  return {
+    dates: [dates[i0], dates[i1], dates[i1], dates[i0], dates[i0]],
+    values: [exp(x0 + offset), exp(x1 + offset), exp(x1 - offset), exp(x0 - offset), exp(x0 + offset)],
+    strokeWidth: 2,
+    color: "none",
+    fillColor,
+  } as Series;
 }

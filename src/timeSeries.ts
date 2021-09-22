@@ -3,6 +3,7 @@ import { fmin, numeric, RandomNumberGenerator, sqr } from "ts-math";
 // import { PCA } from "ml-pca";
 import { fminLossFun } from "./logUtility";
 import { addDays, epochToString, isBusinessDay, toEpoch } from "./dateHelper";
+import { calcTrendSignals, TrendSignal } from "./trend";
 
 const { exp, pow, round, sqrt, log } = Math;
 
@@ -32,10 +33,13 @@ export interface Measures {
   sqr20: Vector;
   sqr40: Vector;
   sqr60: Vector;
+  boll20: Vector;
+  boll40: Vector;
+  boll60: Vector;
   kelly20: Vector;
   kelly40: Vector;
   kelly60: Vector;
-  trend20: Vector;
+  trends: TrendSignal[];
   fwd5: Vector;
   pos20: Vector;
   neg20: Vector;
@@ -193,37 +197,6 @@ export function rollingTrend(vs: number[], alpha: number) {
   return { ks, bs }; // k*x + b = y
 }
 
-//console.log(trend([9, 7, 5, 3, 1, 3, 5, 7, 9], 1-1/14));
-
-export function indexOf(t: number, vs: number[]): number {
-  let i = -1;
-  let n = vs.length;
-  if (n === 0) return -1;
-  else if (t < vs[0]) return -1;
-  else if (t >= vs[n - 1]) return n - 1;
-
-  if (n > 40) {
-    //Binary search if >40 (otherwise it's no gain using it)
-    let hi = n - 1;
-    let low = 0;
-    if (t.valueOf() >= vs[hi]) return hi;
-    while (hi > low + 1) {
-      i = Math.floor((hi + low) / 2);
-      if (t >= vs[i]) low = i;
-      else {
-        hi = i;
-        i = low;
-      }
-    }
-    return i;
-  } else {
-    //Incremental search
-    i = 1;
-    while (t >= vs[i] && i < n - 1) i++;
-    return i - 1;
-  }
-}
-
 function createVector(n: number, value: number): number[] {
   return [...Array(n)].map(() => value);
 }
@@ -302,6 +275,21 @@ export function rollingKelly(rs: number[], alpha: number) {
   return res;
 }
 
+function rollingBollinger(logValues: Vector, alpha: number, squareMeans: Vector | null = null) {
+  if (!squareMeans) {
+    const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
+    squareMeans = ema(logReturns.map(sqr), alpha);
+  }
+  const logMeans = ema(logValues, alpha);
+  const n = logValues.length;
+  const res = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const s = sqrt(squareMeans[i]);
+    res[i] = s === 0 ? 0 : (logValues[i] - logMeans[i]) / s;
+  }
+  return res;
+}
+
 export function calcMeasures(timeSeries: TimeSeries) {
   const dates = timeSeries.dates.slice();
   const values = timeSeries.values.slice();
@@ -309,17 +297,13 @@ export function calcMeasures(timeSeries: TimeSeries) {
   const returns = accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal / pVal - 1));
   const logValues = accumulate(values, (pRes, pVal, cVal, i) => log(cVal));
   const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
+  const alpha = (N: number) => 2 / (N + 1);
+  const ns = [20, 40, 60];
   const rsi14 = rsi(values);
-  const ema20 = ema(returns, 2 / (20 + 1));
-  const ema40 = ema(returns, 2 / (40 + 1));
-  const ema60 = ema(returns, 2 / (60 + 1));
-  const sqr20 = ema(logReturns.map(sqr), 2 / (20 + 1));
-  const sqr40 = ema(logReturns.map(sqr), 2 / (40 + 1));
-  const sqr60 = ema(logReturns.map(sqr), 2 / (60 + 1));
-  const kelly20 = rollingKelly(returns, 2 / (20 + 1));
-  const kelly40 = rollingKelly(returns, 2 / (40 + 1));
-  const kelly60 = rollingKelly(returns, 2 / (60 + 1));
-  const { ks: trend20 } = rollingTrend(logReturns, 2 / (20 + 1));
+  const [ema20, ema40, ema60] = ns.map((d) => ema(returns, alpha(d)));
+  const [sqr20, sqr40, sqr60] = ns.map((d) => ema(logReturns.map(sqr), alpha(d)).map((d) => sqrt(252 * d)));
+  const [boll20, boll40, boll60] = ns.map((d, i) => rollingBollinger(logValues, alpha(d)));
+  const [kelly20, kelly40, kelly60] = ns.map((d) => rollingKelly(returns, alpha(d)));
   const emaLag = (values: number[], alpha: number) =>
     accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? cVal : (1 - alpha) * pRes + alpha * pVal));
   const fwd5 = emaLag(returns.reverse(), 2 / (5 + 1)).reverse();
@@ -329,6 +313,8 @@ export function calcMeasures(timeSeries: TimeSeries) {
   const neg40 = accumulate(ema40, (pRes, pVal, cVal, i) => (i === 0 ? (cVal <= 0 ? 1 : 0) : cVal <= 0 ? pRes + 1 : 0));
   const pos60 = accumulate(ema60, (pRes, pVal, cVal, i) => (i === 0 ? (cVal >= 0 ? 1 : 0) : cVal >= 0 ? pRes + 1 : 0));
   const neg60 = accumulate(ema60, (pRes, pVal, cVal, i) => (i === 0 ? (cVal <= 0 ? 1 : 0) : cVal <= 0 ? pRes + 1 : 0));
+  const { ks, bs } = rollingTrend(logValues, alpha(20));
+  const trends = calcTrendSignals(logValues, alpha(20), ks, bs, 2, 0.1);
   return {
     dates,
     datesAsNumber,
@@ -343,10 +329,13 @@ export function calcMeasures(timeSeries: TimeSeries) {
     sqr20,
     sqr40,
     sqr60,
+    boll20,
+    boll40,
+    boll60,
     kelly20,
     kelly40,
     kelly60,
-    trend20,
+    trends,
     fwd5,
     pos20,
     neg20,
