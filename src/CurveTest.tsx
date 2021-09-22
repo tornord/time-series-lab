@@ -3,6 +3,7 @@ import { NaturalCubicSpline, range } from "ts-math";
 
 import { addDays, toEpoch } from "./dateHelper";
 import { TimeSeriesChart } from "./TimeSeriesChart";
+import { PointType } from "./trend";
 
 export function CurveTest() {
   const dates0 = [0, 10, 30, 40].map((d) => addDays("2021-01-01", d));
@@ -12,7 +13,10 @@ export function CurveTest() {
   const values1 = dates1.map((d) => c.y(toEpoch(d)));
   return (
     <TimeSeriesChart
-      series={[{ dates: dates0, values: values0 },{ dates: dates1, values: values1 }]}
+      series={[
+        { dates: dates0, values: values0, drawPath: false, pointType: PointType.Circle },
+        { dates: dates1, values: values1 },
+      ]}
       onMouseMove={(date) => {
         console.log(date);
       }}

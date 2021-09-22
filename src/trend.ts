@@ -18,12 +18,18 @@ export interface TrendSignal {
   b: number;
 }
 
+export enum PointType {
+  Circle="Circle"
+}
+
 export interface Series {
   dates: string[];
   values: number[];
   color?: string;
   strokeWidth?: number;
   fillColor?: string;
+  drawPath?: boolean;
+  pointType?: PointType;
 }
 
 export function trend(vs: number[], alpha: number) {

@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import * as math from "ts-math";
 import { dateToString, toEpoch } from "./dateHelper";
 import { minMax, TimeSeries } from "./timeSeries";
-import { Series } from "./trend";
+import { PointType, Series } from "./trend";
 
 interface TimeSeriesChartProps {
   width?: number;
@@ -22,8 +22,10 @@ interface Point {
 }
 
 interface Trace {
-  d: string;
+  index: number;
+  d: string | null;
   series: Series;
+  points: Point[];
 }
 
 const round2 = (x: number) => math.round(x, 2);
@@ -60,7 +62,7 @@ export function TimeSeriesChart({
   const marginRight = 33.5;
   const xAxisHeight = 24.5;
   const textColor = "rgb(232, 213, 206)";
-  const traceColors = ["rgb(10, 101, 158)", "hsl(122deg 88% 33%)"];
+  const traceColors = ["rgb(10, 101, 158)", "hsl(122deg 88% 33%)", "rgb(230 42 42)"];
   const xTickSize = 5;
   const fontSize = 11;
   const fontColor = "#789";
@@ -72,14 +74,15 @@ export function TimeSeriesChart({
   let totStartD = "";
   let totEndD = "";
   for (let i = 0; i < series.length; i++) {
-    const { dates, values } = series[0];
+    console.log("meow");
+    const { dates, values } = series[i];
     const minMaxValues = minMax(values);
     const minv = minMaxValues[0] - yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
     const maxv = minMaxValues[1] + yRelativeMargin * (minMaxValues[1] - minMaxValues[0]);
-    if (!isNumber(totMinV) || minv < totMinV) {
+    if (Number.isNaN(totMinV) || minv < totMinV) {
       totMinV = minv;
     }
-    if (!isNumber(totMaxV) || maxv > totMaxV) {
+    if (Number.isNaN(totMaxV) || maxv > totMaxV) {
       totMaxV = maxv;
     }
     if (!totStartD || dates[0] < totStartD) {
@@ -91,11 +94,14 @@ export function TimeSeriesChart({
   }
   if (!isNumber(minValue)) {
     minValue = totMinV;
-  }  if (!isNumber(totMaxV)) {
+  }
+  if (!isNumber(maxValue)) {
     maxValue = totMaxV;
-  }  if (!isNumber(totStartD)) {
+  }
+  if (!isNumber(startDate)) {
     startDate = totStartD;
-  }  if (!isNumber(totEndD)) {
+  }
+  if (!isNumber(endDate)) {
     endDate = totEndD;
   }
   console.log(minValue, maxValue);
@@ -107,10 +113,15 @@ export function TimeSeriesChart({
     .domain([toEpoch(startDate as string), toEpoch(endDate as string)])
     .range([marginLeft, width - marginRight]);
   const xTicks = xScale.ticks(5);
-  const traces: Trace[] = [];
-  for (let i = 0; i < series.length; i++) {
+  let traces: Trace[] = [];
+  for (let i = series.length - 1; i >= 0; i--) {
     const s = series[i];
-    traces.push({ d: createPathD(s, xScale, yScale) as string, series: s });
+    traces.push({
+      index: i,
+      d: s.drawPath !== false ? (createPathD(s, xScale, yScale) as string) : null,
+      points: s.dates.map((d, i) => ({ date: toEpoch(d), value: s.values[i] })),
+      series: s,
+    });
   }
 
   // console.log(minValue, maxValue, yScale(minValue), yScale(maxValue), yTicks);
@@ -158,17 +169,41 @@ export function TimeSeriesChart({
           </g>
         ))}
       </g>
-      {traces.map((trace: Trace, i: number) => (
-        <path
-          key={i}
-          d={trace.d as string}
-          fill={trace.series.fillColor ?? "none"}
-          stroke={trace.series.color ?? traceColors[i % traceColors.length]}
-          strokeWidth={trace.series.strokeWidth ?? 2}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      ))}
+      <g>
+        {traces
+          .filter((d) => d.points && d.series.pointType === PointType.Circle)
+          .map((trace: Trace, i: number) => (
+            <g>
+              {" "}
+              {trace.points.map((p, j) => (
+                <circle
+                  key={j}
+                  cx={xScale(p.date)}
+                  cy={yScale(p.value)}
+                  r={2}
+                  fill={trace.series.fillColor ?? "none"}
+                  stroke={trace.series.color ?? traceColors[trace.index % traceColors.length]}
+                  strokeWidth={trace.series.strokeWidth ?? 2}
+                />
+              ))}
+            </g>
+          ))}
+      </g>
+      <g>
+        {traces
+          .filter((d) => d.d !== null)
+          .map((trace: Trace, i: number) => (
+            <path
+              key={i}
+              d={trace.d as string}
+              fill={trace.series.fillColor ?? "none"}
+              stroke={trace.series.color ?? traceColors[trace.index % traceColors.length]}
+              strokeWidth={trace.series.strokeWidth ?? 2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          ))}
+      </g>
     </svg>
   );
 }

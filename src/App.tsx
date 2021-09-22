@@ -14,6 +14,7 @@ import { ChartTest } from "./ChartTest";
 import { TrendTest } from "./TrendTest";
 import { trendToSerie } from "./trend";
 import { toEpoch } from "./dateHelper";
+import { CurveTest } from "./CurveTest";
 
 const { sqrt, exp } = Math;
 const trendColor = "rgb(230 42 42 / 30%)";
