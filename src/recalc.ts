@@ -7,7 +7,11 @@ function main() {
   const dir = "./src/data/ms";
   const files = fs.readdirSync(dir);
   for (let i = 0; i < files.length; i++) {
-    const fileName = `${dir}/${files[i]}`;
+    const f = files[i]
+    if (!f.match(/^[0-9]+\.json$/)) {
+      continue;
+    }
+    const fileName = `${dir}/${f}`;
     const h = JSON.parse(fs.readFileSync(fileName, "utf-8"));
     const ts = historyToTimeSeries(h.history);
     h.measures = calcMeasures(ts);
@@ -16,4 +20,5 @@ function main() {
   }
 }
 
+console.log("instr".match(/[^0-9]+/));
 main();

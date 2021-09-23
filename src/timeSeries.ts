@@ -1,5 +1,5 @@
 import * as math from "ts-math";
-import { fmin, numeric, RandomNumberGenerator, sqr } from "ts-math";
+import { fmin, linearRegression, normalInv, numeric, RandomNumberGenerator, sqr } from "ts-math";
 // import { PCA } from "ml-pca";
 import { fminLossFun } from "./logUtility";
 import { addDays, epochToString, isBusinessDay, toEpoch } from "./dateHelper";
@@ -30,9 +30,9 @@ export interface Measures {
   ema20: Vector;
   ema40: Vector;
   ema60: Vector;
-  sqr20: Vector;
-  sqr40: Vector;
-  sqr60: Vector;
+  std20: Vector;
+  std40: Vector;
+  std60: Vector;
   boll20: Vector;
   boll40: Vector;
   boll60: Vector;
@@ -93,7 +93,7 @@ export function generateRandomTimeSeries(
   let c0 = 0.0;
   let c = 0.0;
   let sigma = yearlyvolatility / sqrt(n);
-  let r = pow(1.0 + yearlyreturn, 1.0 / n) - 1.0 - math.sqr(sigma) / 2.0;
+  let r = pow(1.0 + yearlyreturn, 1.0 / 252.0) - 1.0 - math.sqr(sigma) / 2.0;
   for (let i = 0; i < dates.length; i++) {
     values[i] = round(100 * v) / 100;
     c = sigma * rng.randN();
@@ -275,17 +275,43 @@ export function rollingKelly(rs: number[], alpha: number) {
   return res;
 }
 
-function rollingBollinger(logValues: Vector, alpha: number, squareMeans: Vector | null = null) {
-  if (!squareMeans) {
+export function rollingBollinger(logValues: Vector, alpha: number, stdevs: Vector | null = null) {
+  if (!stdevs) {
     const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
-    squareMeans = ema(logReturns.map(sqr), alpha);
+    stdevs = rollingStdev(logReturns, alpha);
   }
   const logMeans = ema(logValues, alpha);
   const n = logValues.length;
   const res = new Array(n);
   for (let i = 0; i < n; i++) {
-    const s = sqrt(squareMeans[i]);
+    const s = stdevs[i];
     res[i] = s === 0 ? 0 : (logValues[i] - logMeans[i]) / s;
+  }
+  return res;
+}
+
+export function rollingStdev(logReturns: number[], alpha: number) {
+  const n = logReturns.length;
+  const res: number[] = new Array(n);
+  const ws = new Array(n);
+  for (let i = 0; i < n; i++) {
+    if (i === 0) {
+      res[i] = 0;
+    } else {
+      const m = i + 1;
+      for (let j = 0; j < m; j++) {
+        ws[j] = pow(1 - alpha, i - j);
+      }
+      const ys = logReturns.slice(0, m);
+      ys.sort((d1, d2) => d1 - d2);
+      const xs = new Array(m);
+      for (let j = 0; j < m; j++) {
+        var u = (j + 0.5) / m;
+        xs[j] = normalInv(u, 0, 1);
+      }
+      const { k, b, error } = linearRegression(xs, ys, ws);
+      res[i] = k;
+    }
   }
   return res;
 }
@@ -301,7 +327,7 @@ export function calcMeasures(timeSeries: TimeSeries) {
   const ns = [20, 40, 60];
   const rsi14 = rsi(values);
   const [ema20, ema40, ema60] = ns.map((d) => ema(returns, alpha(d)));
-  const [sqr20, sqr40, sqr60] = ns.map((d) => ema(logReturns.map(sqr), alpha(d)).map((d) => sqrt(252 * d)));
+  const [std20, std40, std60] = ns.map((d) => rollingStdev(logReturns, alpha(d)));
   const [boll20, boll40, boll60] = ns.map((d, i) => rollingBollinger(logValues, alpha(d)));
   const [kelly20, kelly40, kelly60] = ns.map((d) => rollingKelly(returns, alpha(d)));
   const emaLag = (values: number[], alpha: number) =>
@@ -326,9 +352,9 @@ export function calcMeasures(timeSeries: TimeSeries) {
     ema20,
     ema40,
     ema60,
-    sqr20,
-    sqr40,
-    sqr60,
+    std20,
+    std40,
+    std60,
     boll20,
     boll40,
     boll60,

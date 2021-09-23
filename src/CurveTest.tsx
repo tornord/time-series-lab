@@ -13,12 +13,13 @@ export function CurveTest() {
   const values1 = dates1.map((d) => c.y(toEpoch(d)));
   return (
     <TimeSeriesChart
+      height={500}
       series={[
         { dates: dates0, values: values0, drawPath: false, pointType: PointType.Circle },
         { dates: dates1, values: values1 },
       ]}
-      onMouseMove={(date) => {
-        console.log(date);
+      onMouseMove={(date,value) => {
+        console.log(date, value);
       }}
     />
   );

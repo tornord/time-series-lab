@@ -12683,10 +12683,10 @@
   "resolved" "https://registry.npmjs.org/tryer/-/tryer-1.0.1.tgz"
   "version" "1.0.1"
 
-"ts-math@^1.0.11":
-  "integrity" "sha512-KIoP6jiUZcvB4BLbcZ2NAcGPfX/ixLsiqtkATXuzWgYCnmpnDXTrPHwj63foMzw32mf0KarmKWTSOGtIoEuyLw=="
-  "resolved" "https://registry.npmjs.org/ts-math/-/ts-math-1.0.11.tgz"
-  "version" "1.0.11"
+"ts-math@^1.0.12":
+  "integrity" "sha512-vgHcclQZXxhvPylaBhg58o4RmBqz4W4+kvuE0aESnb2oeIRD+8PRQWBMaMLLEdZgLN6f6vfyg0OLefP24Q5vqg=="
+  "resolved" "https://registry.npmjs.org/ts-math/-/ts-math-1.0.12.tgz"
+  "version" "1.0.12"
   dependencies:
     "fmin" "^0.0.2"
     "json-stable-stringify" "^1.0.1"

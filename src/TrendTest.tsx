@@ -1,15 +1,16 @@
 import React, { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { round, indexOf } from "ts-math";
 import { toEpoch } from "./dateHelper";
 import { rollingTrend } from "./timeSeries";
 import { TimeSeriesChart } from "./TimeSeriesChart";
-import { calcTrendSignals, generateTestTimeSeries, TrendSignal, trendToSerie } from "./trend";
+import { calcTrendSignals, generateTestTimeSeries, TrendSignal, trendToSeries } from "./trend";
 
 const { log } = Math;
 
 export function TrendTest() {
   let { type, seed }: any = useParams();
+  const page = (useLocation().pathname.match(/^\/([a-z]+)\//) as any)[1];
   const N = 20;
   const alpha = 2 / (N + 1);
   const meanSigmas = 2.0;
@@ -48,12 +49,14 @@ export function TrendTest() {
   );
   const series = [{ dates, values }];
 
-  const greenColor = "hsl(122deg 88% 33% / 30%)";
+  // const greenColor = "hsl(122deg 88% 33% / 30%)";
   const trendColor = "rgb(230 42 42 / 30%)";
-  series.push(trendToSerie(dates, res, meanSigmas, trendColor));
+  series.push(trendToSeries(dates, res, meanSigmas, trendColor));
   return (
     <>
       <TimeSeriesChart
+        width={800}
+        height={500}
         series={series}
         logarithmic={true}
         minValue={84}
@@ -69,7 +72,7 @@ export function TrendTest() {
           }
         }}
       />
-      <Link to={`/trend/${type ?? "stock"}/${Number(seed ?? "1") + 1}`}>Next</Link>
+      <Link to={`/${page}/${type ?? "stock"}/${Number(seed ?? "1") + 1}`}>Next</Link>
     </>
   );
 }

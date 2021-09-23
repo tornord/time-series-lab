@@ -82,12 +82,17 @@ const baseUrl = (cmd: CommandType): string =>
 
 // https://mws.millistream.com/mws.fcgi?usr=${config.MS_USER}&pwd=${config.MS_SECRET}&cmd=quote&filetype=json&list=35207&fields=name,symbol,diff1d,diff1dprc,lastprice,totalnumberofshares,sector&instrumenttype=4&timezone=Europe%2FStockholm
 
-export async function fetchInstruments(lists: number[], insrefs: string[], fields: string[]): Promise<Instrument[]> {
+export async function fetchInstruments(
+  lists: string[],
+  insrefs: string[] | null = null,
+  fields: string[] | null = null
+): Promise<Instrument[]> {
   if (!fields) {
     fields = [
       "insref",
       "name",
       "symbol",
+      "list",
       "lastprice",
       "diff1d",
       "diff1dprc",
@@ -122,8 +127,8 @@ export async function fetchInstruments(lists: number[], insrefs: string[], field
   }
   const url =
     `${baseUrl(CommandType.Quote)}&timezone=Europe%2FStockholm&` +
-    `${lists ? `list=${lists.join(",")}` : `insref=${insrefs.join(",")}`}&` +
-    `fields=${fields.join("%2C")}&instrumenttype=4`;
+    `${lists ? `list=${lists.join(",")}` : insrefs ? `insref=${insrefs.join(",")}` : ""}` +
+    `&fields=${fields.join("%2C")}&instrumenttype=4`;
   let res;
   try {
     res = await fetch(url);

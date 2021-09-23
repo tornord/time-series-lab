@@ -12,9 +12,11 @@ import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { indexOf, stdev } from "ts-math";
 import { ChartTest } from "./ChartTest";
 import { TrendTest } from "./TrendTest";
-import { trendToSerie } from "./trend";
+import { trendToSeries } from "./trend";
 import { toEpoch } from "./dateHelper";
 import { CurveTest } from "./CurveTest";
+import { BollTest, bollingerToSeries } from "./BollTest";
+import { PivotTest } from "./PivotTest";
 
 const { sqrt, exp } = Math;
 const trendColor = "rgb(230 42 42 / 30%)";
@@ -147,7 +149,7 @@ function StartView() {
       return res;
     }
     res.last = d.measures.values[index];
-    ["fwd5", "rsi14", "ema20", "sqr20", "boll20", "boll40", "boll60", "kelly20", "kelly40", "kelly60"].forEach((k) => {
+    ["fwd5", "rsi14", "ema20", "std20", "boll20", "boll40", "boll60", "kelly20", "kelly40", "kelly60"].forEach((k) => {
       res[k] = (d.measures as any)[k][index];
     });
     res.trstr20 = d.measures.trends[index].strength;
@@ -159,16 +161,29 @@ function StartView() {
   const maxValue = mid * sqrt(totMinMaxRatio * 1);
   const minValue = mid / sqrt(totMinMaxRatio * 1);
   const trendIndex = indexOf(toEpoch(selectedDate), selectedStock.measures.datesAsNumber);
-  const series = [selectedStock.measures];
+  const series = [
+    selectedStock.measures,
+    ...bollingerToSeries(
+      selectedStock.measures.dates,
+      selectedStock.measures.logValues,
+      selectedStock.measures.std20,
+      2 / (20 + 1),
+      2,
+      "rgb(10 101 158 / 20%)",
+      "rgb(10 101 158 / 10%)"
+    ),
+  ];
   if (trendIndex >= 0) {
     series.push(
-      trendToSerie(selectedStock.measures.dates, selectedStock.measures.trends[trendIndex], 2.0, trendColor) as any
+      trendToSeries(selectedStock.measures.dates, selectedStock.measures.trends[trendIndex], 2.0, trendColor) as any
     );
   }
   console.log(selectedDate);
   return (
     <div className="App">
       <TimeSeriesChart
+        width={800}
+        height={450}
         series={series}
         onMouseMove={(date) => {
           if (date && date !== selectedDate) {
@@ -182,6 +197,7 @@ function StartView() {
         logarithmic={true}
       />
       <TimeSeriesChart
+        width={800}
         height={150}
         series={[{ dates: selectedStock.measures.dates, values: selectedStock.measures.rsi14 }]}
         onMouseMove={(date) => {
@@ -232,8 +248,14 @@ function App() {
         <Route path="/curve">
           <CurveTest />
         </Route>
+        <Route path="/boll/:type/:seed">
+          <BollTest />
+        </Route>
         <Route path="/trend/:type/:seed">
           <TrendTest />
+        </Route>
+        <Route path="/pivot/:type/:seed">
+          <PivotTest />
         </Route>
         <Route path="/">
           <StartView />

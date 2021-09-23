@@ -1,8 +1,8 @@
-import AsciiTable from "ascii-table";
-import { numeric, RandomNumberGenerator, sqr } from "ts-math";
+import { RandomNumberGenerator, sqr } from "ts-math";
 import { createNormalSamplesOneDim } from "./logUtility";
 import { ema, generateRandomTimeSeries } from "./timeSeries";
 import { addDays } from "./dateHelper";
+import { toAsciiTable } from "./toAsciiTable";
 
 const { pow, sqrt, log, abs, exp } = Math;
 
@@ -19,7 +19,7 @@ export interface TrendSignal {
 }
 
 export enum PointType {
-  Circle="Circle"
+  Circle = "Circle",
 }
 
 export interface Series {
@@ -62,21 +62,6 @@ export function trend(vs: number[], alpha: number) {
 }
 
 // const transpose = (arrays) => arrays[0].map((_, j) => [arrays.map((d) => d[j])]);
-
-function toAsciiTable(arrays: number[][], heading: string[], decimals = null) {
-  const rows = numeric.transpose(
-    arrays.map((a: number[], i: number) => a.map((v) => v.toFixed(decimals ? decimals[i] : 2))) as any[][]
-  );
-  var table = AsciiTable.factory({
-    heading: ["index", ...heading],
-    rows: rows.map((d, i) => [i, ...d]),
-  });
-  table.setBorder(" ");
-  arrays.forEach((a: number[], i: number) => {
-    table.setAlign(i + 1, AsciiTable.RIGHT);
-  });
-  return table;
-}
 
 export function trendStrength(
   logValues: number[],
@@ -164,13 +149,16 @@ export function generateTestTimeSeries(type: string, seed: string, n: number) {
     0,
     rng.randomSeed()
   );
-  if (type === "square" || type === "line") {
-    const ns = createNormalSamplesOneDim(dates.length).map((d) => d[0]);
+  if (type !== "stock") {
+    let ns = createNormalSamplesOneDim(dates.length).map((d) => d[0]);
+    ns = rng.shuffle(ns);
     const ys = ns.map((d, i) => (i - (dates.length - 1) / 2) / ((dates.length - 1) / 2));
     if (type === "square") {
-      values = rng.shuffle(ns).map((d, i) => exp(dailyVol * d + (log(86) + (log(114) - log(86)) * sqr(ys[i]))));
-    } else {
-      values = rng.shuffle(ns).map((d, i) => exp(dailyVol * d + (log(86) + (log(114) - log(86)) * abs(ys[i]))));
+      values = ns.map((d, i) => exp(dailyVol * d + (log(86) + (log(114) - log(86)) * sqr(ys[i]))));
+    } else if (type === "line") {
+      values = ns.map((d, i) => exp(dailyVol * d + (log(86) + (log(114) - log(86)) * abs(ys[i]))));
+    } else if (type === "constant") {
+      values = ns.map((d, i) => exp(dailyVol * d + log(100)));
     }
   }
   return { dates, values };
@@ -192,7 +180,7 @@ export function calcTrendSignals(
   return trends;
 }
 
-export function trendToSerie(dates: string[], trendSignal: TrendSignal, meanSigmas: number, fillColor: string) {
+export function trendToSeries(dates: string[], trendSignal: TrendSignal, meanSigmas: number, fillColor: string) {
   const i0 = trendSignal.startIndex;
   const i1 = trendSignal.endIndex;
   const offset = meanSigmas * trendSignal.sigma;

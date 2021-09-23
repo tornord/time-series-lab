@@ -55,7 +55,7 @@ import aapl from "./ms/75250.json";
 import amzn from "./ms/75247.json";
 
 import { History, HistoryItem } from "../millistreamApi";
-import { calcMeasures, TimeSeries } from "../timeSeries";
+import { TimeSeries } from "../timeSeries";
 
 const names: any[] = [];
 names.push(seba, shba, dnb, danske, aza);

@@ -1,7 +1,7 @@
 import * as math from "ts-math";
-import { fmin, round, sqr, createNormalSamples, RandomNumberGenerator } from "ts-math";
+import { fmin } from "ts-math";
 
-const { log, exp, sqrt, pow } = Math;
+const { log, exp, pow } = Math;
 
 export const SAFE_LOG_LIMIT = -10;
 export const EXP_SAFE_LOG_LIMIT = exp(SAFE_LOG_LIMIT);
@@ -122,57 +122,4 @@ export function rollingKelly(rs: number[], alpha: number) {
     res[i] = sol.x[0];
   }
   return res;
-}
-
-function main1() {
-  const n = 5000;
-  const nAssets = 2;
-
-  const sigmas = [0.005, 0.24];
-  const mus = [log(1.02), log(1.07)];
-  const rho = 0.2;
-  const corrs = [
-    [1, rho],
-    [rho, 1],
-  ];
-  const ns = createNormalSamples(n, nAssets, corrs);
-
-  const rs = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const r = new Array(nAssets);
-    for (let j = 0; j < nAssets; j++) {
-      let rnd = ns[i][j];
-      r[j] = exp(mus[j] - sqr(sigmas[j]) / 2 + sigmas[j] * rnd) - 1;
-    }
-    rs[i] = r;
-  }
-
-  const u = fminLossFun(rs);
-  const uPrime = fminPrimeFun(rs);
-
-  const w = 0.16;
-  const ws = [...Array(9)].map((d, i) => 0.1 + i * 0.02);
-  console.log(ws.map((d, i) => round(u([d]), 4)));
-  console.log(u([w]), uPrime([w])[0]);
-  var solution1 = fmin.nelderMead(u, [0.5], {});
-  var solution2 = fmin.conjugateGradient(u, [0.5], {});
-
-  console.log(solution1.x[0], 1 - solution1.x[0]);
-  console.log(solution2.x[0], 1 - solution2.x[0]);
-  const x = solution1.x[0];
-  const xs = [...Array(9)].map((d, i) => x - (i - 4) * 0.01);
-  console.log(xs.map((d, i) => round(1000 * (u([d]) - u([x])), 4)));
-}
-
-function main2() {
-  const n = 40;
-  const ns = createNormalSamplesOneDim(n);
-  const sigma = 0.25 / sqrt(252);
-  const mu = log(1.06) / 252;
-  const rs = ns.map(([rnd]) => exp(mu - sqr(sigma) / 2 + sigma * rnd) - 1);
-  const rng = new RandomNumberGenerator("123");
-  rng.shuffle(rs);
-  const N = 60;
-  const ks = rollingKelly(rs, 2 / (N + 1));
-  console.log(ks.map((d) => round(d, 1)));
 }
