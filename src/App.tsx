@@ -12,11 +12,12 @@ import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { indexOf, stdev } from "ts-math";
 import { ChartTest } from "./ChartTest";
 import { TrendTest } from "./TrendTest";
-import { trendToSeries } from "./trend";
+import { PointType, Series, trendToSeries } from "./trend";
 import { toEpoch } from "./dateHelper";
 import { CurveTest } from "./CurveTest";
 import { BollTest, bollingerToSeries } from "./BollTest";
 import { PivotTest } from "./PivotTest";
+import { centralRegression, pivots } from "./pivot";
 
 const { sqrt, exp } = Math;
 const trendColor = "rgb(230 42 42 / 30%)";
@@ -114,14 +115,14 @@ function toColumns(data: any[]): Column[] {
       if (key.startsWith("pos") || key.startsWith("neg")) {
         format = "0";
       }
-      if (key.startsWith("ema") || key.startsWith("fwd")) {
+      if (key.startsWith("ema") || key.startsWith("fwd")||key.startsWith("trend")||key.startsWith("std")) {
         format = "0.00%";
       }
       if (key.startsWith("sqr")) {
         format = "0.0%";
       }
-      if (key.startsWith("trend")) {
-        format = "0.00%";
+      if (key.startsWith("quad")||key.startsWith("lin")) {
+        format = "0.000000";
       }
     }
     if (key === "peers") {
@@ -149,7 +150,7 @@ function StartView() {
       return res;
     }
     res.last = d.measures.values[index];
-    ["fwd5", "rsi14", "ema20", "std20", "boll20", "boll40", "boll60", "kelly20", "kelly40", "kelly60"].forEach((k) => {
+    ["fwd5", "rsi14", "ema20", "std20", "boll20","lin20", "quad20", "kelly20", "kelly40", "kelly60"].forEach((k) => {
       res[k] = (d.measures as any)[k][index];
     });
     res.trstr20 = d.measures.trends[index].strength;
@@ -161,7 +162,7 @@ function StartView() {
   const maxValue = mid * sqrt(totMinMaxRatio * 1);
   const minValue = mid / sqrt(totMinMaxRatio * 1);
   const trendIndex = indexOf(toEpoch(selectedDate), selectedStock.measures.datesAsNumber);
-  const series = [
+  const series: Series[] = [
     selectedStock.measures,
     ...bollingerToSeries(
       selectedStock.measures.dates,
@@ -173,6 +174,16 @@ function StartView() {
       "rgb(10 101 158 / 10%)"
     ),
   ];
+  const cenemas = centralRegression(selectedStock.measures.logValues, 2 / (20 + 1), 4);
+  const pivs = pivots(selectedStock.measures.logValues, 2 / (20 + 1), 4);
+  series.push({ dates: selectedStock.measures.dates, values: cenemas.map((d) => d.b).map(exp) })
+  series.push({
+    dates: pivs.map((d) => selectedStock.measures.dates[d.index]),
+    values: pivs.map((d) => d.value).map(exp),
+    drawPath: false,
+    pointType: PointType.Circle,
+    pointSize: 4,
+  });
   if (trendIndex >= 0) {
     series.push(
       trendToSeries(selectedStock.measures.dates, selectedStock.measures.trends[trendIndex], 2.0, trendColor) as any
@@ -183,7 +194,7 @@ function StartView() {
     <div className="App">
       <TimeSeriesChart
         width={800}
-        height={450}
+        height={400}
         series={series}
         onMouseMove={(date) => {
           if (date && date !== selectedDate) {
@@ -198,7 +209,7 @@ function StartView() {
       />
       <TimeSeriesChart
         width={800}
-        height={150}
+        height={120}
         series={[{ dates: selectedStock.measures.dates, values: selectedStock.measures.rsi14 }]}
         onMouseMove={(date) => {
           if (date && date !== selectedDate) {
@@ -210,13 +221,7 @@ function StartView() {
         minValue={15}
         maxValue={85}
       />
-      {/* <C3Chart data={scatterData} axis={{}} /> */}
-      {/* <Chart {...toChartProps(selectedStock as TimeSeries, null)} /> */}
-      {/* <Chart {...toChartProps({ name: "RSI", dates: selectedStock.dates, values: rsis }, chartClick)} /> */}
-      <p>{selectedDate}</p>
-      <p>{selectedStock.name}</p>
-      {/* <p>{(selectedStock.trend as Trend).ks[dateIndex]}</p>
-  <p>{(selectedStock.trend as Trend).bs[dateIndex]}</p> */}
+      <p>{selectedStock.name} - {selectedDate}</p>
       <Grid
         data={tableData}
         columns={toColumns(tableData)}

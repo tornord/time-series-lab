@@ -47,12 +47,15 @@ import eqt from "./ms/4528561.json";
 import indt from "./ms/3273.json";
 import inveb from "./ms/354.json";
 
-// IT
+// IT Usa
 import msft from "./ms/72659.json";
 import fb from "./ms/418586.json";
 import intc from "./ms/75294.json";
 import aapl from "./ms/75250.json";
 import amzn from "./ms/75247.json";
+
+// IT Sverige
+import fnox from "./ms/42953.json";
 
 import { History, HistoryItem } from "../millistreamApi";
 import { TimeSeries } from "../timeSeries";
@@ -68,6 +71,7 @@ names.push(tel, ericb, kivb);
 names.push(azn, getib, pfe);
 names.push(eqt, indt, inveb);
 names.push(msft, fb, intc, aapl, amzn);
+names.push(fnox);
 
 export function historyToTimeSeries(historyItems: HistoryItem[]): TimeSeries {
   const dates = historyItems.map((e: HistoryItem) => e.date);

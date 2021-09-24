@@ -3513,9 +3513,11 @@
     "lodash.uniq" "^4.5.0"
 
 "caniuse-lite@^1.0.0", "caniuse-lite@^1.0.30000981", "caniuse-lite@^1.0.30001109", "caniuse-lite@^1.0.30001125", "caniuse-lite@^1.0.30001181":
-  "integrity" "sha512-xJJqzyd+7GCJXkcoBiQ1GuxEiOBCLQ0aVW9HMekifZsAVGdj5eJ4mFB9fEhSHipq9IOk/QXFJUiIr9lZT+EsGw=="
-  "resolved" "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001191.tgz"
-  "version" "1.0.30001191"
+  "integrity" "sha512-Fhjc/k8725ItmrvW5QomzxLeojewxvqiYCKeFcfFEhut28IVLdpHU19dneOmltZQIE5HNbawj1HYD+1f2bM1Dg=="
+  "resolved" "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001260.tgz"
+  "version" "1.0.30001260"
+  dependencies:
+    "nanocolors" "^0.1.0"
 
 "capture-exit@^2.0.0":
   "integrity" "sha512-PiT/hQmTonHhl/HFGN+Lx3JJUznrVYJ3+AQsnthneZbvW7x+f08Tk7yLJTLEOUvBTbduLeeBkxEaYXUOUrRq6g=="
@@ -8809,6 +8811,11 @@
   "resolved" "https://registry.npmjs.org/nan/-/nan-2.14.2.tgz"
   "version" "2.14.2"
 
+"nanocolors@^0.1.0":
+  "integrity" "sha512-2nMHqg1x5PU+unxX7PGY7AuYxl2qDx7PSrTRjizr8sxdd3l/3hBuWWaki62qmtYm2U5i4Z5E7GbjlyDFhs9/EQ=="
+  "resolved" "https://registry.npmjs.org/nanocolors/-/nanocolors-0.1.12.tgz"
+  "version" "0.1.12"
+
 "nanoid@^3.1.20":
   "integrity" "sha512-a1cQNyczgKbLX9jwbS/+d7W8fX/RfgYR7lVWwWOGIPNgK2m0MWvrGF6/m4kk6U3QcFMnZf3RIhL0v2Jgh/0Uxw=="
   "resolved" "https://registry.npmjs.org/nanoid/-/nanoid-3.1.20.tgz"
@@ -12683,10 +12690,10 @@
   "resolved" "https://registry.npmjs.org/tryer/-/tryer-1.0.1.tgz"
   "version" "1.0.1"
 
-"ts-math@^1.0.12":
-  "integrity" "sha512-vgHcclQZXxhvPylaBhg58o4RmBqz4W4+kvuE0aESnb2oeIRD+8PRQWBMaMLLEdZgLN6f6vfyg0OLefP24Q5vqg=="
-  "resolved" "https://registry.npmjs.org/ts-math/-/ts-math-1.0.12.tgz"
-  "version" "1.0.12"
+"ts-math@^1.0.13":
+  "integrity" "sha512-G/aYBFSvjVlu7zgN8iBZWLocUeNi+6O0kyPK52xBXQrKU+8bqf5o+z0d6voMxa0C87JBrkrldf97zpZ3uKwZ4Q=="
+  "resolved" "https://registry.npmjs.org/ts-math/-/ts-math-1.0.13.tgz"
+  "version" "1.0.13"
   dependencies:
     "fmin" "^0.0.2"
     "json-stable-stringify" "^1.0.1"

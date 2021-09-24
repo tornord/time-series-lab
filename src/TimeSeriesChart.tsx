@@ -178,13 +178,12 @@ export function TimeSeriesChart({
           .filter((d) => d.points && d.series.pointType === PointType.Circle)
           .map((trace: Trace, i: number) => (
             <g>
-              {" "}
               {trace.points.map((p, j) => (
                 <circle
                   key={j}
                   cx={xScale(p.date)}
                   cy={yScale(p.value)}
-                  r={2}
+                  r={trace.series.pointSize ?? 2}
                   fill={trace.series.fillColor ?? "none"}
                   stroke={trace.series.color ?? traceColors[trace.index % traceColors.length]}
                   strokeWidth={trace.series.strokeWidth ?? 2}
@@ -203,6 +202,7 @@ export function TimeSeriesChart({
               fill={trace.series.fillColor ?? "none"}
               stroke={trace.series.color ?? traceColors[trace.index % traceColors.length]}
               strokeWidth={trace.series.strokeWidth ?? 2}
+              strokeDasharray={trace.series.strokeDasharray ?? "none"}
               strokeLinejoin="round"
               strokeLinecap="round"
             />

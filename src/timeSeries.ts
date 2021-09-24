@@ -39,6 +39,8 @@ export interface Measures {
   kelly20: Vector;
   kelly40: Vector;
   kelly60: Vector;
+  lin20: Vector;
+  quad20: Vector;
   trends: TrendSignal[];
   fwd5: Vector;
   pos20: Vector;
@@ -333,6 +335,9 @@ export function calcMeasures(timeSeries: TimeSeries) {
   const emaLag = (values: number[], alpha: number) =>
     accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? cVal : (1 - alpha) * pRes + alpha * pVal));
   const fwd5 = emaLag(returns.reverse(), 2 / (5 + 1)).reverse();
+  for (let i = Math.max(fwd5.length - 5, 0); i < fwd5.length; i++) {
+    fwd5[i] = 0;
+  }
   const pos20 = accumulate(ema20, (pRes, pVal, cVal, i) => (i === 0 ? (cVal >= 0 ? 1 : 0) : cVal >= 0 ? pRes + 1 : 0));
   const neg20 = accumulate(ema20, (pRes, pVal, cVal, i) => (i === 0 ? (cVal <= 0 ? 1 : 0) : cVal <= 0 ? pRes + 1 : 0));
   const pos40 = accumulate(ema40, (pRes, pVal, cVal, i) => (i === 0 ? (cVal >= 0 ? 1 : 0) : cVal >= 0 ? pRes + 1 : 0));
@@ -341,6 +346,8 @@ export function calcMeasures(timeSeries: TimeSeries) {
   const neg60 = accumulate(ema60, (pRes, pVal, cVal, i) => (i === 0 ? (cVal <= 0 ? 1 : 0) : cVal <= 0 ? pRes + 1 : 0));
   const { ks, bs } = rollingTrend(logValues, alpha(20));
   const trends = calcTrendSignals(logValues, alpha(20), ks, bs, 2, 0.1);
+  const lin20 = trends.map((d) => d.k);
+  const quad20 = trends.map((d) => d.q);
   return {
     dates,
     datesAsNumber,
@@ -362,6 +369,8 @@ export function calcMeasures(timeSeries: TimeSeries) {
     kelly40,
     kelly60,
     trends,
+    lin20,
+    quad20,
     fwd5,
     pos20,
     neg20,

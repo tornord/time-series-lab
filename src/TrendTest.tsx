@@ -16,7 +16,7 @@ export function TrendTest() {
   const meanSigmas = 2.0;
   const breachBuffer = 0.1;
   const { dates, datesAsNumbers, values, trendSignals } = useMemo(() => {
-    const { dates, values } = generateTestTimeSeries(type ?? "stock", seed ?? "1", 121);
+    const { dates, values } = generateTestTimeSeries(type ?? "stock", seed ?? "1", 120);
     const logValues = values.map(log);
     const { ks, bs } = rollingTrend(logValues, alpha);
     const trendSignals = calcTrendSignals(logValues, alpha, ks, bs, meanSigmas, breachBuffer);

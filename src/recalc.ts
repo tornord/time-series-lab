@@ -20,5 +20,4 @@ function main() {
   }
 }
 
-console.log("instr".match(/[^0-9]+/));
 main();

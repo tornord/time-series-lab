@@ -1,8 +1,9 @@
 import fs from "fs";
+import { has } from "lodash";
 
-import { fetchHistory } from "./millistreamApi";
+import { History, HistoryItem, fetchHistory } from "./millistreamApi";
 
-const ids = [
+const universeIds = [
   "104",
   "1146",
   "1175000",
@@ -21,6 +22,7 @@ const ids = [
   "354",
   "3788",
   "418586",
+  "42953",
   "4528561",
   "45634",
   "45639",
@@ -42,14 +44,34 @@ const ids = [
 ];
 // const ids: string[] = [];
 
-async function main() {
-  const res = await fetchHistory(ids, "2020-08-01");
-  for (let h of res) {
-    // const ts = historyToTimeSeries(h.history);
-    // h.measures = calcMeasures(ts);
+const later = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
+
+function writeHistory(hs: History[]) {
+  for (let h of hs) {
     fs.writeFileSync(`./src/data/ms/${h.insref}.json`, JSON.stringify(h, null, 2), "utf-8");
     console.log(`${h.name} done`);
   }
 }
 
-main();
+async function fetchUniverse() {
+  const res = await fetchHistory(universeIds, "2020-08-01");
+  writeHistory(res);
+}
+
+async function fetchAll() {
+  const instrs = JSON.parse(fs.readFileSync("./src/data/ms/instruments.json", "utf-8"));
+  const allIds = instrs.map((d: any) => String(d.insref));
+  const batchSize = 15;
+  let i = 0;
+  while (i < allIds.length) {
+    const ids = allIds.slice(i, i + batchSize);
+    i += batchSize;
+    console.log(ids.join(","));
+    const res = await fetchHistory(ids, "2020-08-01");
+    writeHistory(res);
+    await later(1200);
+  }
+}
+
+// fetchUniverse()
+fetchAll();

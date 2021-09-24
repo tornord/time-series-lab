@@ -4,7 +4,7 @@ import { ema, generateRandomTimeSeries } from "./timeSeries";
 import { addDays } from "./dateHelper";
 import { toAsciiTable } from "./toAsciiTable";
 
-const { pow, sqrt, log, abs, exp } = Math;
+const { pow, sqrt, log, abs, exp, sin, PI } = Math;
 
 export interface TrendSignal {
   mean: number;
@@ -14,6 +14,7 @@ export interface TrendSignal {
   strength: number;
   duration: number;
   sharpeRatio: number;
+  q: number
   k: number;
   b: number;
 }
@@ -30,6 +31,8 @@ export interface Series {
   fillColor?: string;
   drawPath?: boolean;
   pointType?: PointType;
+  pointSize?: number;
+  strokeDasharray?: string;
 }
 
 export function trend(vs: number[], alpha: number) {
@@ -133,7 +136,8 @@ export function trendStrength(
   const sharpeRatio = (sqrt(252) * mean) / sigma;
   const duration = (endIndex - startIndex) / 21;
   const strength = duration * sharpeRatio;
-  return { mean, sigma, startIndex, endIndex, strength, sharpeRatio, duration, k, b };
+  const q = endIndex>0 ? k-ks[endIndex-1] : 0;
+  return { mean, sigma, startIndex, endIndex, strength, sharpeRatio, duration, q, k, b };
 }
 
 export function generateTestTimeSeries(type: string, seed: string, n: number) {
@@ -152,13 +156,15 @@ export function generateTestTimeSeries(type: string, seed: string, n: number) {
   if (type !== "stock") {
     let ns = createNormalSamplesOneDim(dates.length).map((d) => d[0]);
     ns = rng.shuffle(ns);
-    const ys = ns.map((d, i) => (i - (dates.length - 1) / 2) / ((dates.length - 1) / 2));
+    const ys = ns.map((d, i) => (2 * i) / (dates.length - 1) - 1);
     if (type === "square") {
       values = ns.map((d, i) => exp(dailyVol * d + (log(86) + (log(114) - log(86)) * sqr(ys[i]))));
     } else if (type === "line") {
       values = ns.map((d, i) => exp(dailyVol * d + (log(86) + (log(114) - log(86)) * abs(ys[i]))));
     } else if (type === "constant") {
       values = ns.map((d, i) => exp(dailyVol * d + log(100)));
+    } else if (type === "sin") {
+      values = ns.map((d, i) => exp(dailyVol * d + (log(86) + ((log(114) - log(86)) * (1 + sin(PI * ys[i]))) / 2)));
     }
   }
   return { dates, values };
