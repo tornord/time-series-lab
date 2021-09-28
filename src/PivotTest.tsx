@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { indexOf, linearRegression, polynomialRegression } from "ts-math";
 import { toEpoch } from "./dateHelper";
-import { minMax } from "./timeSeries";
+import { minMax, rsi } from "./timeSeries";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { generateTestTimeSeries, PointType, Series } from "./trend";
 import { centralRegression, pivots, turningPoints } from "./pivot";
@@ -14,14 +14,16 @@ export function PivotTest() {
   let { type, seed }: any = useParams();
   const page = (useLocation().pathname.match(/^\/([a-z]+)\//) as any)[1];
 
-  const N = 40;
+  const N = 30;
   const alpha = 2 / (N + 1);
-  const { dates, values } = generateTestTimeSeries(type ?? "stock", seed ?? "1", 240);
+  const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 240);
   const datesAsNumber = dates.map(toEpoch);
   const logValues = values.map(log);
 
-  const cenemas = centralRegression(logValues, alpha, 4);
-  const pivs = pivots(logValues, alpha, 4);
+  const polyOrder = 4;
+  const cenemas = centralRegression(logValues, alpha, polyOrder);
+  const pivs = pivots(logValues, alpha, polyOrder);
+  const rsi14 = rsi(values);
 
   const series1: Series[] = [
     { dates, values },
@@ -43,7 +45,17 @@ export function PivotTest() {
       values: tps.map((d) => d.value),
       drawPath: false,
       pointType: PointType.Circle,
-      pointSize: 4
+      pointSize: 4,
+    },
+  ];
+  const series3: Series[] = [
+    { dates, values: rsi14 },
+    {
+      dates: pivs.map((d) => dates[d.index]),
+      values: pivs.map((d) => rsi14[d.index]),
+      drawPath: false,
+      pointType: PointType.Circle,
+      pointSize: 4,
     },
   ];
   if (selectedDate) {
@@ -61,6 +73,13 @@ export function PivotTest() {
       strokeWidth: 1,
       color: "rgb(232, 213, 206)",
     });
+    series3.push({
+      dates: [selectedDate, selectedDate],
+      values: [15, 85],
+      strokeDasharray: "3 4",
+      strokeWidth: 1,
+      color: "rgb(232, 213, 206)",
+    });
   }
 
   // const greenColor = "hsl(122deg 88% 33% / 30%)";
@@ -69,7 +88,7 @@ export function PivotTest() {
     <>
       <TimeSeriesChart
         width={800}
-        height={500}
+        height={400}
         series={series1}
         logarithmic={true}
         onMouseMove={(date, value) => {
@@ -84,7 +103,7 @@ export function PivotTest() {
       />
       <TimeSeriesChart
         width={800}
-        height={200}
+        height={150}
         series={series2}
         logarithmic={false}
         onMouseMove={(date, value) => {
@@ -96,8 +115,23 @@ export function PivotTest() {
             }
           }
         }}
+      />{" "}
+      <TimeSeriesChart
+        width={800}
+        height={150}
+        series={series3}
+        logarithmic={false}
+        onMouseMove={(date, value) => {
+          const index = indexOf(toEpoch(date), datesAsNumber);
+          if (index >= 0 && index < dates.length) {
+            console.log(date, rsi14[index]);
+            if (date !== selectedDate && date >= dates[0] && date <= dates[dates.length - 1]) {
+              setSelectedDate(date);
+            }
+          }
+        }}
       />
-      <Link to={`/${page}/${type ?? "stock"}/${Number(seed ?? "1") + 1}`}>Next</Link>
+      <Link to={`/${page}/${type ?? "random"}/${Number(seed ?? "1") + 1}`}>Next</Link>
     </>
   );
 }

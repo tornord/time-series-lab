@@ -1,15 +1,11 @@
-import { useState } from "react";
-import { PCA } from "ml-pca";
-
-// import { salesByDate } from "./SuperstoreSalesData";
-// import { airlinePassengers } from "./AirlinePassengersData";
-import { correlation, synchronize, minMax } from "./timeSeries";
+import { useEffect, useMemo, useState } from "react";
+import { minMax } from "./timeSeries";
 import Grid, { Column } from "./Grid";
 import { getUniverse } from "./data/universe";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { History } from "./millistreamApi";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import { indexOf, stdev } from "ts-math";
+import { indexOf, RandomNumberGenerator, stdev } from "ts-math";
 import { ChartTest } from "./ChartTest";
 import { TrendTest } from "./TrendTest";
 import { PointType, Series, trendToSeries } from "./trend";
@@ -18,9 +14,23 @@ import { CurveTest } from "./CurveTest";
 import { BollTest, bollingerToSeries } from "./BollTest";
 import { PivotTest } from "./PivotTest";
 import { centralRegression, pivots } from "./pivot";
+import { allInstrumentInsrefs } from "./data/ms/instruments";
+import axios from "axios";
 
 const { sqrt, exp } = Math;
 const trendColor = "rgb(230 42 42 / 30%)";
+
+function useFetchHistory(insrefs: string[]) {
+  const [data, setData] = useState(null as History[] | null);
+  const insrefsStr = insrefs.join(",");
+  useEffect(() => {
+    const url = `http://localhost:3001/?insrefs=${insrefsStr}`;
+    axios.get(url).then(({ data }) => {
+      setData(data as unknown as History[] | null);
+    });
+  }, [insrefsStr]);
+  return data;
+}
 
 // const rng = new RandomNumberGenerator("123");
 
@@ -34,77 +44,48 @@ const trendColor = "rgb(230 42 42 / 30%)";
 
 let startDate: string | null = null;
 let endDate: string | null = null;
-const stdevs: number[] = [];
-const universe = getUniverse();
-const corrs = correlation(universe.map((d) => d.measures));
-const vss = synchronize(universe.map((d) => d.measures)).map((vs) => vs.map(Math.log));
-const logrets = vss.slice(1).map((vs, i) => vs.map((v, j) => v - vss[i][j]));
-const pca: any = new PCA(logrets);
-const evals = pca.getEigenvalues();
-// const evecs: any = pca.getEigenvectors().valueOf();
-const nf = 4; // Number of factors
-const f =
-  1 /
-  pca
-    .getExplainedVariance()
-    .slice(0, nf)
-    .reduce((sum: number, d: number) => sum + d, 0);
-// const pcastdevs = pca.S.slice(0, nf).map((d: number) => Math.sqrt(f * d));
-const eigenVectors = pca.U.data.map((d: number[]) => d.slice(0, nf));
 
-const ps = [];
-for (let i = 0; i < evals.length; i++) {
-  ps.push([universe[i].ticker.toLowerCase().replace(/ /g, ""), 10 * eigenVectors[i][0], 10 * eigenVectors[i][1]]);
-}
-const scatterData = {
-  xs: ps.reduce((p: any, c, i) => {
-    p[c[0]] = `${c[0]}_x`;
-    return p;
-  }, {}),
-  columns: ps.reduce((p, c, i) => {
-    p.push([`${c[0]}_x`, c[1]] as any);
-    p.push([`${c[0]}`, c[2]] as any);
-    return p;
-  }, []),
-  type: "scatter",
-};
-for (let i = 0; i < universe.length; i++) {
-  const u1 = universe[i];
-  const s = stdev(u1.measures.logReturns);
-  stdevs.push(s);
-}
 // const corrPos = calcCorrPositions(corrs);
 // console.log(corrPos);
-let totMinMaxRatio = Number.NaN;
-universe.forEach((d: History, i: number) => {
-  d.measures.dates.forEach((d: string) => {
-    if (!startDate || d < startDate) {
-      startDate = d;
+
+function calcMinMaxs(data: History[]) {
+  let totMinMaxRatio = Number.NaN;
+  data.forEach((d: History, i: number) => {
+    d.measures.dates.forEach((d: string) => {
+      if (!startDate || d < startDate) {
+        startDate = d;
+      }
+      if (!endDate || d > endDate) {
+        endDate = d;
+      }
+    });
+    const minmax = minMax(d.measures.values);
+    const md = minmax[1] / minmax[0];
+    if (Number.isNaN(totMinMaxRatio) || md > totMinMaxRatio) {
+      totMinMaxRatio = md;
     }
-    if (!endDate || d > endDate) {
-      endDate = d;
-    }
+
+    // const cs = corrs[i];
+    // const peers = cs
+    //   .map((c, j) => ({ correlation: c, stock: universe[j] }))
+    //   .filter((c) => c.stock !== d && c.correlation > 0.5);
+    // peers.sort((d1, d2) => d2.correlation - d1.correlation);
+    // d.peers = peers;
   });
+  return { totMinMaxRatio, startDate, endDate };
+}
 
-  const minmax = minMax(d.measures.values);
-  const md = minmax[1] / minmax[0];
-  if (Number.isNaN(totMinMaxRatio) || md > totMinMaxRatio) {
-    totMinMaxRatio = md;
-  }
-
-  const cs = corrs[i];
-  const peers = cs
-    .map((c, j) => ({ correlation: c, stock: universe[j] }))
-    .filter((c) => c.stock !== d && c.correlation > 0.5);
-  peers.sort((d1, d2) => d2.correlation - d1.correlation);
-  // d.peers = peers;
-});
-(window as any).universe = universe;
+// (window as any).universe = universe;
 
 function toColumns(data: any[]): Column[] {
   if (data.length === 0) return [];
   const header = null;
-  const row = data[0];
+  let row: any | null = null;
+  for (let i = 0; i < data.length; i++) {
+    if (row === null || Object.keys(data[i]).length > Object.keys(row).length) {
+      row = data[i];
+    }
+  }
   const res = Object.keys(data[0]).map((key) => {
     let className = "alignCenter";
     let format = null;
@@ -115,13 +96,13 @@ function toColumns(data: any[]): Column[] {
       if (key.startsWith("pos") || key.startsWith("neg")) {
         format = "0";
       }
-      if (key.startsWith("ema") || key.startsWith("fwd")||key.startsWith("trend")||key.startsWith("std")) {
+      if (key.startsWith("ema") || key.startsWith("fwd") || key.startsWith("trend") || key.startsWith("std")) {
         format = "0.00%";
       }
       if (key.startsWith("sqr")) {
         format = "0.0%";
       }
-      if (key.startsWith("quad")||key.startsWith("lin")) {
+      if (key.startsWith("quad") || key.startsWith("lin")) {
         format = "0.000000";
       }
     }
@@ -137,9 +118,30 @@ function toColumns(data: any[]): Column[] {
 }
 
 function StartView() {
-  const ms = universe[0].measures;
-  const [selectedDate, setSelectedDate] = useState(ms.dates[ms.dates.length - 1]);
-  const [selectedStock, setSelectedStock] = useState(universe[0]);
+  const rng = new RandomNumberGenerator("124");
+  let insrefs = allInstrumentInsrefs.slice();
+  // rng.shuffle(insrefs);
+  // insrefs = insrefs.slice(0, 30);
+  const universe = useFetchHistory(insrefs);
+  const ms = universe && universe.length > 0 ? universe[0].measures : null;
+  const [selectedDate, setSelectedDate] = useState(ms ? ms.dates[ms.dates.length - 1] : null);
+  const [selectedStock, setSelectedStock] = useState(universe ? universe[0] : null);
+  const { totMinMaxRatio, startDate, endDate } = useMemo(
+    () => (universe ? calcMinMaxs(universe) : { totMinMaxRatio: 0, startDate: "", endDate: "" }),
+    [universe]
+  );
+  useEffect(() => {
+    if (universe && !selectedStock) {
+      const ms = universe && universe.length > 0 ? universe[0].measures : null;
+      setSelectedStock(universe ? universe[0] : null);
+      setSelectedDate(ms ? ms.dates[ms.dates.length - 1] : null);
+    }
+  }, [universe]);
+
+  if (universe === null || selectedStock === null || selectedDate === null) {
+    return <div className="App"></div>;
+  }
+
   const tableData = universe.map((d: History, i: number) => {
     const res: any = {
       name: d.name,
@@ -150,9 +152,10 @@ function StartView() {
       return res;
     }
     res.last = d.measures.values[index];
-    ["fwd5", "rsi14", "ema20", "std20", "boll20","lin20", "quad20", "kelly20", "kelly40", "kelly60"].forEach((k) => {
+    ["fwd5", "rsi14", "ema20", "std20", "std60", "boll20", "lin20", "quad20", "kelly20", "kelly40", "kelly60"].forEach((k) => {
       res[k] = (d.measures as any)[k][index];
     });
+    ["std20", "std40", "std60"].forEach((d) => (res[d] *= sqrt(252)));
     res.trstr20 = d.measures.trends[index].strength;
     // res.peers = d.peers.map((e) => `${e.stock.ticker} - ${math.numberFormat(e.correlation, "0%")}`).join(", ");
     return res;
@@ -162,7 +165,7 @@ function StartView() {
   const maxValue = mid * sqrt(totMinMaxRatio * 1);
   const minValue = mid / sqrt(totMinMaxRatio * 1);
   const trendIndex = indexOf(toEpoch(selectedDate), selectedStock.measures.datesAsNumber);
-  const series: Series[] = [
+  const series1: Series[] = [
     selectedStock.measures,
     ...bollingerToSeries(
       selectedStock.measures.dates,
@@ -174,18 +177,28 @@ function StartView() {
       "rgb(10 101 158 / 10%)"
     ),
   ];
-  const cenemas = centralRegression(selectedStock.measures.logValues, 2 / (20 + 1), 4);
-  const pivs = pivots(selectedStock.measures.logValues, 2 / (20 + 1), 4);
-  series.push({ dates: selectedStock.measures.dates, values: cenemas.map((d) => d.b).map(exp) })
-  series.push({
+  const Npivot = 30;
+  const cenemas = centralRegression(selectedStock.measures.logValues, 2 / (Npivot + 1), 4);
+  const pivs = pivots(selectedStock.measures.logValues, 2 / (Npivot + 1), 4);
+  series1.push({ dates: selectedStock.measures.dates, values: cenemas.map((d) => d.b).map(exp) });
+  series1.push({
     dates: pivs.map((d) => selectedStock.measures.dates[d.index]),
     values: pivs.map((d) => d.value).map(exp),
     drawPath: false,
     pointType: PointType.Circle,
     pointSize: 4,
   });
+  const series2: Series[] = [{ dates: selectedStock.measures.dates, values: selectedStock.measures.rsi14 }];
+  series2.push({
+    dates: pivs.map((d) => selectedStock.measures.dates[d.index]),
+    values: pivs.map((d) => selectedStock.measures.rsi14[d.index]),
+    drawPath: false,
+    pointType: PointType.Circle,
+    pointSize: 4,
+  });
+
   if (trendIndex >= 0) {
-    series.push(
+    series1.push(
       trendToSeries(selectedStock.measures.dates, selectedStock.measures.trends[trendIndex], 2.0, trendColor) as any
     );
   }
@@ -195,7 +208,7 @@ function StartView() {
       <TimeSeriesChart
         width={800}
         height={400}
-        series={series}
+        series={series1}
         onMouseMove={(date) => {
           if (date && date !== selectedDate) {
             setSelectedDate(date);
@@ -210,7 +223,7 @@ function StartView() {
       <TimeSeriesChart
         width={800}
         height={120}
-        series={[{ dates: selectedStock.measures.dates, values: selectedStock.measures.rsi14 }]}
+        series={series2}
         onMouseMove={(date) => {
           if (date && date !== selectedDate) {
             setSelectedDate(date);
@@ -221,7 +234,9 @@ function StartView() {
         minValue={15}
         maxValue={85}
       />
-      <p>{selectedStock.name} - {selectedDate}</p>
+      <p>
+        {selectedStock.name} - {selectedDate}
+      </p>
       <Grid
         data={tableData}
         columns={toColumns(tableData)}

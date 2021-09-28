@@ -24,16 +24,34 @@ interface GridProps {
   onClick: (e: MouseEvent, dataItem: any, columnKey: string) => void;
 }
 
+interface SortOrder {
+  key: string;
+  ascending: boolean;
+}
+
+function sortNumberFun(sortOrder: SortOrder) {
+  return (d1: any, d2: any) => {
+    const v1 = d1[sortOrder.key];
+    const v2 = d2[sortOrder.key];
+    if (typeof v1 !== "number" && typeof v2 !== "number") return 0;
+    if (typeof v1 !== "number") return 1;
+    if (typeof v2 !== "number") return -1;
+    return (v1 - v2) * (sortOrder.ascending ? 1 : -1);
+  };
+}
+
 export default function Grid({ data, columns, onClick }: GridProps) {
-  const [sortOrder, setSortOrder] = useState({ key: columns[0].key, ascending: true });
+  const [sortOrder, setSortOrder] = useState({ key: columns[0].key, ascending: true } as SortOrder);
   if (data.length === 0) {
     return <table></table>;
   }
-  let sortFun = (d1: any, d2: any) => (d1[sortOrder.key] - d2[sortOrder.key]) * (sortOrder.ascending ? 1 : -1);
+  let sortFun: (d1: any, d2: any) => number;
   if (data.some((d) => typeof d[sortOrder.key] === "string")) {
     sortFun = (d1: any, d2: any) =>
       (d1[sortOrder.key] > d2[sortOrder.key] ? 1 : d1[sortOrder.key] < d2[sortOrder.key] ? -1 : 0) *
       (sortOrder.ascending ? 1 : -1);
+  } else {
+    sortFun = sortNumberFun(sortOrder);
   }
   data.sort(sortFun);
   return (
@@ -54,7 +72,7 @@ export default function Grid({ data, columns, onClick }: GridProps) {
         </tr>
       </thead>
       <tbody>
-        {data.map((d, i) => (
+        {data.slice(0,30).map((d, i) => (
           <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
             {columns.map((c, j) => (
               <td

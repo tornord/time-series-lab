@@ -74,17 +74,15 @@ names.push(msft, fb, intc, aapl, amzn);
 names.push(fnox);
 
 export function historyToTimeSeries(historyItems: HistoryItem[]): TimeSeries {
-  const dates = historyItems.map((e: HistoryItem) => e.date);
-  const values = historyItems.map((e: HistoryItem) => e.closeprice);
+  const idxVals = historyItems
+    .map((e: HistoryItem, i: number) => ({ index: i, value: e.closeprice }))
+    .filter((d) => typeof d.value === "number" && d.value > 0 && Number.isFinite(d.value));
+
+  const dates = idxVals.map(({ index }) => historyItems[index].date);
+  const values = idxVals.map(({ value }) => value);
   return { dates, values };
 }
 
 export function getUniverse(): History[] {
-  names.forEach((h: History) => {
-    // const ts = historyToTimeSeries(h.history);
-    // h.measures = calcMeasures(ts);
-    h.id = String(h.insref);
-    h.ticker = h.symbol;
-  });
   return names;
 }

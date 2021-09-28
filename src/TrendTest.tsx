@@ -16,7 +16,7 @@ export function TrendTest() {
   const meanSigmas = 2.0;
   const breachBuffer = 0.1;
   const { dates, datesAsNumbers, values, trendSignals } = useMemo(() => {
-    const { dates, values } = generateTestTimeSeries(type ?? "stock", seed ?? "1", 120);
+    const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 120);
     const logValues = values.map(log);
     const { ks, bs } = rollingTrend(logValues, alpha);
     const trendSignals = calcTrendSignals(logValues, alpha, ks, bs, meanSigmas, breachBuffer);
@@ -33,9 +33,9 @@ export function TrendTest() {
       maxIndex = i;
     }
   }
-  const [state, setState] = useState({ endIndex: maxIndex, type: type ?? "stock", seed: seed ?? "1" });
-  if ((type ?? "stock") !== state.type || (seed ?? "1") !== state.seed) {
-    setState({ endIndex: maxIndex, type: type ?? "stock", seed: seed ?? "1" });
+  const [state, setState] = useState({ endIndex: maxIndex, type: type ?? "random", seed: seed ?? "1" });
+  if ((type ?? "random") !== state.type || (seed ?? "1") !== state.seed) {
+    setState({ endIndex: maxIndex, type: type ?? "random", seed: seed ?? "1" });
   }
 
   const res: TrendSignal = trendSignals.find((d) => d.endIndex === state.endIndex) as any;
@@ -59,8 +59,6 @@ export function TrendTest() {
         height={500}
         series={series}
         logarithmic={true}
-        minValue={84}
-        maxValue={118}
         onMouseMove={(date) => {
           const t = toEpoch(date);
           let index = indexOf(t, datesAsNumbers);
@@ -72,7 +70,7 @@ export function TrendTest() {
           }
         }}
       />
-      <Link to={`/${page}/${type ?? "stock"}/${Number(seed ?? "1") + 1}`}>Next</Link>
+      <Link to={`/${page}/${type ?? "random"}/${Number(seed ?? "1") + 1}`}>Next</Link>
     </>
   );
 }

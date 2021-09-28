@@ -153,7 +153,7 @@ export function generateTestTimeSeries(type: string, seed: string, n: number) {
     0,
     rng.randomSeed()
   );
-  if (type !== "stock") {
+  if (type !== "random") {
     let ns = createNormalSamplesOneDim(dates.length).map((d) => d[0]);
     ns = rng.shuffle(ns);
     const ys = ns.map((d, i) => (2 * i) / (dates.length - 1) - 1);

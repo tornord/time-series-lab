@@ -177,7 +177,7 @@ export function TimeSeriesChart({
         {traces
           .filter((d) => d.points && d.series.pointType === PointType.Circle)
           .map((trace: Trace, i: number) => (
-            <g>
+            <g key={i}>
               {trace.points.map((p, j) => (
                 <circle
                   key={j}

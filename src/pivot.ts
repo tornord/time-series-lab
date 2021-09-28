@@ -66,6 +66,19 @@ export function findPivot(vs: number[], i0: number, i1: number, type: PivotType)
   return mi;
 }
 
+export function adjustPivot(vs: number[], index: number, type: PivotType, inc: number) {
+  const n = vs.length;
+  while (index >= 0 && index < n) {
+    const v = vs[index];
+    if (inc === -1 && index === 0) return index;
+    if (inc === 1 && index === n - 1) return index;
+    const a = type === PivotType.Min ? -1 : 1;
+    if (a * v > a * vs[index + inc]) return index;
+    index += inc;
+  }
+  return index;
+}
+
 export function pivots(vs: number[], alpha: number, polynomOrder: number = 4): TurningPoint[] {
   const n = vs.length;
   const coeffs = centralRegression(vs, alpha, polynomOrder);
@@ -77,7 +90,13 @@ export function pivots(vs: number[], alpha: number, polynomOrder: number = 4): T
     const i0 = i === 0 ? 0 : tps[i - 1].index;
     const i1 = i === tps.length ? n - 1 : tps[i].index;
     const type = (i + t0) % 2 === 0 ? PivotType.Min : PivotType.Max;
-    const mi = findPivot(vs, i0, i1, type);
+    let mi = findPivot(vs, i0, i1, type);
+    if (mi === i0 && mi >= 0) {
+      mi = adjustPivot(vs, mi, type, -1);
+    }
+    if (mi === i1 && mi < n) {
+      mi = adjustPivot(vs, mi, type, 1);
+    }
     res.push({ index: mi, value: vs[mi], type });
   }
   return res;

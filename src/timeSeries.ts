@@ -1,11 +1,11 @@
 import * as math from "ts-math";
-import { fmin, linearRegression, normalInv, numeric, RandomNumberGenerator, sqr } from "ts-math";
+import { fmin, linearRegression, normalInv, numeric, qqRegression, RandomNumberGenerator, sqr } from "ts-math";
 // import { PCA } from "ml-pca";
 import { fminLossFun } from "./logUtility";
 import { addDays, epochToString, isBusinessDay, toEpoch } from "./dateHelper";
 import { calcTrendSignals, TrendSignal } from "./trend";
 
-const { exp, pow, round, sqrt, log } = Math;
+const { exp, pow, round, sqrt, log, cos, PI } = Math;
 
 export interface TimeSeries {
   dates: string[];
@@ -26,6 +26,7 @@ export interface Measures {
   logValues: Vector;
   returns: Vector;
   logReturns: Vector;
+  stdev: number;
   rsi14: Vector;
   ema20: Vector;
   ema40: Vector;
@@ -301,6 +302,10 @@ export function rollingStdev(logReturns: number[], alpha: number) {
       res[i] = 0;
     } else {
       const m = i + 1;
+      // const centralWs = new Array(n);
+      // for (let i = 0; i < n; i++) {
+      //   centralWs[i] = (1 + cos(2 * PI * (u - 0.5))) / 2;
+      // }
       for (let j = 0; j < m; j++) {
         ws[j] = pow(1 - alpha, i - j);
       }
@@ -308,7 +313,9 @@ export function rollingStdev(logReturns: number[], alpha: number) {
       ys.sort((d1, d2) => d1 - d2);
       const xs = new Array(m);
       for (let j = 0; j < m; j++) {
-        var u = (j + 0.5) / m;
+        const u = (j + 0.5) / m;
+        // const centralWeight = (1 + cos(2 * PI * (u - 0.5))) / 2
+        // ws[j] *= centralWeight;
         xs[j] = normalInv(u, 0, 1);
       }
       const { k, b, error } = linearRegression(xs, ys, ws);
@@ -325,6 +332,7 @@ export function calcMeasures(timeSeries: TimeSeries) {
   const returns = accumulate(values, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal / pVal - 1));
   const logValues = accumulate(values, (pRes, pVal, cVal, i) => log(cVal));
   const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
+  const {stdev} = qqRegression(logReturns, true)
   const alpha = (N: number) => 2 / (N + 1);
   const ns = [20, 40, 60];
   const rsi14 = rsi(values);
@@ -355,6 +363,7 @@ export function calcMeasures(timeSeries: TimeSeries) {
     logValues,
     returns,
     logReturns,
+    stdev,
     rsi14,
     ema20,
     ema40,

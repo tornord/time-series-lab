@@ -41,7 +41,7 @@ export function BollTest() {
   // const universe = getUniverse();
   // const stock = universe.find(d=> d.name ==="Apple Inc." )
   // const { dates, values } = (stock as any).measures;
-  const { dates, values } = generateTestTimeSeries(type ?? "stock", seed ?? "1", 120);
+  const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 120);
   const logValues = accumulate(values, (pRes, pVal, cVal, i) => log(cVal));
   const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
   const N = 20;
@@ -72,7 +72,7 @@ export function BollTest() {
           console.log(date, value);
         }}
       />
-      <Link to={`/${page}/${type ?? "stock"}/${Number(seed ?? "1") + 1}`}>Next</Link>
+      <Link to={`/${page}/${type ?? "random"}/${Number(seed ?? "1") + 1}`}>Next</Link>
     </>
   );
 }
