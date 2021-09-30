@@ -55,7 +55,7 @@ export default function Grid({ data, columns, onClick }: GridProps) {
   }
   data.sort(sortFun);
   return (
-    <table>
+    <table className="table">
       <thead>
         <tr>
           {columns.map((c, i) => (
@@ -72,7 +72,7 @@ export default function Grid({ data, columns, onClick }: GridProps) {
         </tr>
       </thead>
       <tbody>
-        {data.slice(0,30).map((d, i) => (
+        {data.slice(0,200).map((d, i) => (
           <tr key={i} className={i % 2 === 0 ? "even" : "odd"}>
             {columns.map((c, j) => (
               <td

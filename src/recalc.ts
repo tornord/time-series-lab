@@ -2,8 +2,9 @@ import fs from "fs";
 
 import { historyToTimeSeries } from "./data/universe";
 import { calcMeasures } from "./timeSeries";
+import { History } from "./millistreamApi";
 
-const { sqrt } = Math;
+const { sqrt, abs } = Math;
 
 function writeDataImportFile(instrs: any[]) {
   const importRows: string[] = [];
@@ -39,6 +40,7 @@ function main() {
   const dir = "./src/data/ms";
   const files = fs.readdirSync(dir);
   const allinstrs = [];
+  const skips: { [type: string]: History[] } = { tooLowVol: [], extremeEvents: [], tooShortHistory: [] };
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
     if (!f.match(/^[0-9]+\.json$/)) {
@@ -53,15 +55,34 @@ function main() {
       console.log("Incorrect value", h.name);
     }
     h.measures = calcMeasures(ts);
-    if (h.measures.stdev > 0.1 / sqrt(252)) {
-      allinstrs.push(h);
-    } else {
-      console.log(`${h.name} volatility too low ${h.measures.stdev * sqrt(252)}`);
-    }
     fs.writeFileSync(fileName, JSON.stringify(h, null, 2), "utf-8");
     console.log(`${h.name} done.`);
+    if (h.measures.stdev < 0.1 / sqrt(252)) {
+      skips.tooLowVol.push(h);
+    } else if (h.measures.extremeEvents.filter((d: any) => abs(d.sigmas) > 15).length > 0) {
+      skips.extremeEvents.push(h);
+    } else if (h.measures.dates.length <= 20) {
+      skips.tooShortHistory.push(h);
+    } else {
+      allinstrs.push(h);
+    }
   }
+  console.log(`Written ${allinstrs.length} instruments`);
   writeInsrefsImportFile(allinstrs);
+
+  console.log("\nVolatility too low:");
+  skips.tooLowVol.forEach((h) => console.log(`${h.name} => ${h.measures.stdev * sqrt(252)}`));
+  console.log("\nExtreme events:");
+  skips.extremeEvents.forEach((h) =>
+    console.log(
+      `${h.name} => ${h.measures.extremeEvents
+        .filter((d: any) => abs(d.sigmas) > 15)
+        .map((d) => d.date)
+        .join(", ")}`
+    )
+  );
+  console.log("\nToo short history:");
+  skips.tooShortHistory.forEach((h) => console.log(`${h.name} => ${h.measures.dates.length}`));
 }
 
 main();

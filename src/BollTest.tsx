@@ -6,6 +6,7 @@ import { accumulate, ema, rollingBollinger, rollingStdev } from "./timeSeries";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { toAsciiTable } from "./toAsciiTable";
 import { generateTestTimeSeries, Series } from "./trend";
+import instr from "./data/ms/1412764.json"
 
 const { log, exp } = Math;
 
@@ -38,10 +39,8 @@ export function bollingerToSeries(
 export function BollTest() {
   let { type, seed }: any = useParams();
   const page = (useLocation().pathname.match(/^\/([a-z]+)\//) as any)[1];
-  // const universe = getUniverse();
-  // const stock = universe.find(d=> d.name ==="Apple Inc." )
-  // const { dates, values } = (stock as any).measures;
-  const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 120);
+  const { dates, values } = (instr as any).measures;
+  // const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 120);
   const logValues = accumulate(values, (pRes, pVal, cVal, i) => log(cVal));
   const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
   const N = 20;
@@ -57,7 +56,7 @@ export function BollTest() {
     ["dates", "log", "mean", "std", "boll", "upper", "lower", "boll2"],
     [0, 4, 4, 4, 2, 4, 4, 2]
   );
-  // console.log(table.toString());
+  console.log(table.toString());
   // console.log(stdev(logReturns));
   return (
     <>
@@ -71,6 +70,7 @@ export function BollTest() {
         onMouseMove={(date, value) => {
           console.log(date, value);
         }}
+        logarithmic={true}
       />
       <Link to={`/${page}/${type ?? "random"}/${Number(seed ?? "1") + 1}`}>Next</Link>
     </>

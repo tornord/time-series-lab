@@ -8,7 +8,7 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-family: source-code-pro, Consolas, "Courier New", monospace;
 }
 
 .alignCenter {
@@ -30,3 +30,16 @@ code {
   }
 }
 
+.table {
+  border-collapse: collapse;
+
+  td,
+  th {
+    padding: 1px 2px;
+  }
+  tbody {
+    tr:nth-child(odd) {
+      background-color: aliceblue;
+    }
+  }
+}

@@ -48,6 +48,18 @@ let endDate: string | null = null;
 // const corrPos = calcCorrPositions(corrs);
 // console.log(corrPos);
 
+function formatUrlFriendlyName(name: string) {
+  if (name !== undefined && name.length > 0) {
+    name = name.toLowerCase();
+    name = name.replace("$", "\\$");
+    name = name.replace(/_|\.| /g, "-");
+    name = name.replace(/Å|å|Ä|ä/g, "a");
+    name = name.replace(/Ö|ö|ø|é|è/g, "o");
+    name = name.replace(/\/|=|^|#|\*|\(|\)|\+|%/g, "");
+  }
+  return name;
+}
+
 function calcMinMaxs(data: History[]) {
   let totMinMaxRatio = Number.NaN;
   data.forEach((d: History, i: number) => {
@@ -125,6 +137,7 @@ function StartView() {
   const universe = useFetchHistory(insrefs);
   const ms = universe && universe.length > 0 ? universe[0].measures : null;
   const [selectedDate, setSelectedDate] = useState(ms ? ms.dates[ms.dates.length - 1] : null);
+
   const [selectedStock, setSelectedStock] = useState(universe ? universe[0] : null);
   const { totMinMaxRatio, startDate, endDate } = useMemo(
     () => (universe ? calcMinMaxs(universe) : { totMinMaxRatio: 0, startDate: "", endDate: "" }),
@@ -141,6 +154,7 @@ function StartView() {
   if (universe === null || selectedStock === null || selectedDate === null) {
     return <div className="App"></div>;
   }
+  const selectedIndex = indexOf(toEpoch(selectedDate), selectedStock.measures.datesAsNumber);
 
   const tableData = universe.map((d: History, i: number) => {
     const res: any = {
@@ -152,11 +166,24 @@ function StartView() {
       return res;
     }
     res.last = d.measures.values[index];
-    ["fwd5", "rsi14", "ema20", "std20", "std60", "boll20", "lin20", "quad20", "kelly20", "kelly40", "kelly60"].forEach((k) => {
+    [
+      "fwd5",
+      "rsi14",
+      "ema20",
+      "std20",
+      "std60",
+      "boll20",
+      "lin20",
+      "lin60",
+      "quad20",
+      "quad60",
+      "kelly20",
+      "kelly60",
+    ].forEach((k) => {
       res[k] = (d.measures as any)[k][index];
     });
-    ["std20", "std40", "std60"].forEach((d) => (res[d] *= sqrt(252)));
-    res.trstr20 = d.measures.trends[index].strength;
+    ["std20", "std60"].forEach((d) => (res[d] *= sqrt(252)));
+    res.trstr20 = d.measures.trend20[index].strength;
     // res.peers = d.peers.map((e) => `${e.stock.ticker} - ${math.numberFormat(e.correlation, "0%")}`).join(", ");
     return res;
   });
@@ -177,9 +204,9 @@ function StartView() {
       "rgb(10 101 158 / 10%)"
     ),
   ];
-  const Npivot = 30;
+  const Npivot = 40;
   const cenemas = centralRegression(selectedStock.measures.logValues, 2 / (Npivot + 1), 4);
-  const pivs = pivots(selectedStock.measures.logValues, 2 / (Npivot + 1), 4);
+  const pivs = pivots(selectedStock.measures.logValues.slice(0, selectedIndex + 1), 2 / (Npivot + 1), 4);
   series1.push({ dates: selectedStock.measures.dates, values: cenemas.map((d) => d.b).map(exp) });
   series1.push({
     dates: pivs.map((d) => selectedStock.measures.dates[d.index]),
@@ -199,7 +226,7 @@ function StartView() {
 
   if (trendIndex >= 0) {
     series1.push(
-      trendToSeries(selectedStock.measures.dates, selectedStock.measures.trends[trendIndex], 2.0, trendColor) as any
+      trendToSeries(selectedStock.measures.dates, selectedStock.measures.trend20[trendIndex], 2.0, trendColor) as any
     );
   }
   console.log(selectedDate);
@@ -235,7 +262,7 @@ function StartView() {
         maxValue={85}
       />
       <p>
-        {selectedStock.name} - {selectedDate}
+        {selectedStock.id} - <a href={`https://www.di.se/bors/aktier/${formatUrlFriendlyName(`${selectedStock.symbol || selectedStock.name}-${selectedStock.insref}`)}`} target="_blank" rel="noreferrer">{selectedStock.name}</a> - {selectedDate} 
       </p>
       <Grid
         data={tableData}
