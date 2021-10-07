@@ -8,6 +8,14 @@ export function dateToString(d: Date) {
   return d.toISOString().substring(0, 10);
 }
 
+export function toEpoch(date: string) {
+  return new Date(date).getTime();
+}
+
+export function epochToString(t: number) {
+  return dateToString(new Date(t));
+}
+
 export function addDays(date: string, days: number) {
   const d = toDate(date);
   let res = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + days, 0, 0, 0));
@@ -24,10 +32,3 @@ export function isBusinessDay(date: string) {
   return w >= 1 && w <= 5;
 }
 
-export function toEpoch(date: string) {
-  return new Date(date).getTime();
-}
-
-export function epochToString(t: number) {
-  return dateToString(new Date(t));
-}

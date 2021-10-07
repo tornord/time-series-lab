@@ -1,7 +1,6 @@
 import fs from "fs";
-import { has } from "lodash";
 
-import { History, HistoryItem, fetchHistory } from "./millistreamApi";
+import { History, fetchHistory } from "./millistreamApi";
 
 const universeIds = [
   "104",
@@ -59,7 +58,12 @@ async function fetchUniverse() {
 }
 
 async function fetchAll() {
-  const instrs = JSON.parse(fs.readFileSync("./src/data/ms/instruments.json", "utf-8"));
+  const swedenInstrs = JSON.parse(fs.readFileSync("./src/data/ms/sweden.json", "utf-8"));
+  const swedenExtraInstrs = JSON.parse(fs.readFileSync("./src/data/ms/sweden-extra.json", "utf-8"));
+  const norwayInstrs = JSON.parse(fs.readFileSync("./src/data/ms/norway.json", "utf-8"));
+  const denmarkInstrs = JSON.parse(fs.readFileSync("./src/data/ms/denmark.json", "utf-8"));
+  const usInstrs = JSON.parse(fs.readFileSync("./src/data/ms/us.json", "utf-8"));
+  const instrs = [...swedenInstrs,...norwayInstrs,...denmarkInstrs,...usInstrs,...swedenExtraInstrs];
   const allIds = instrs.map((d: any) => String(d.insref));
   const batchSize = 15;
   let i = 0;

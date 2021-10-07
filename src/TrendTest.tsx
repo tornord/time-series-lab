@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { round, indexOf } from "ts-math";
+import { indexOf } from "ts-math";
 import { toEpoch } from "./dateHelper";
-import { rollingTrend } from "./timeSeries";
-import { TimeSeriesChart } from "./TimeSeriesChart";
+import { minMax, rollingTrend } from "./timeSeries";
+import { TimeSeriesChart, useCursor } from "./TimeSeriesChart";
 import { calcTrendSignals, generateTestTimeSeries, TrendSignal, trendToSeries } from "./trend";
 
 const { log } = Math;
@@ -15,14 +15,17 @@ export function TrendTest() {
   const alpha = 2 / (N + 1);
   const meanSigmas = 2.0;
   const breachBuffer = 0.1;
-  const { dates, datesAsNumbers, values, trendSignals } = useMemo(() => {
+  const { dates, datesAsNumbers, values, trendSignals, minValue, maxValue } = useMemo(() => {
     const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 120);
     const logValues = values.map(log);
     const { ks, bs } = rollingTrend(logValues, alpha);
     const trendSignals = calcTrendSignals(logValues, alpha, ks, bs, meanSigmas, breachBuffer);
     const datesAsNumbers = dates.map(toEpoch);
-    return { dates, datesAsNumbers, values, trendSignals };
-  }, [type, seed]);
+    let [minValue, maxValue] = minMax(values);
+    minValue /= 1.05;
+    maxValue *= 1.05;
+    return { dates, datesAsNumbers, values, trendSignals, minValue, maxValue };
+  }, [alpha, type, seed]);
 
   let maxStr = -Infinity;
   let maxIndex = Number.NaN;
@@ -38,15 +41,17 @@ export function TrendTest() {
     setState({ endIndex: maxIndex, type: type ?? "random", seed: seed ?? "1" });
   }
 
+  const cursor = useCursor(true, false);
+
   const res: TrendSignal = trendSignals.find((d) => d.endIndex === state.endIndex) as any;
-  console.log(
-    res.startIndex,
-    state.endIndex,
-    round(res.sharpeRatio, 2),
-    round(res.duration, 2),
-    round(res.strength, 2),
-    dates.length
-  );
+  // console.log(
+  //   res.startIndex,
+  //   state.endIndex,
+  //   round(res.sharpeRatio, 2),
+  //   round(res.duration, 2),
+  //   round(res.strength, 2),
+  //   dates.length
+  // );
   const series = [{ dates, values }];
 
   // const greenColor = "hsl(122deg 88% 33% / 30%)";
@@ -57,6 +62,8 @@ export function TrendTest() {
       <TimeSeriesChart
         width={800}
         height={500}
+        minValue={minValue}
+        maxValue={maxValue}
         series={series}
         logarithmic={true}
         onMouseMove={(date) => {
@@ -69,6 +76,7 @@ export function TrendTest() {
             setState({ endIndex: index, type: state.type, seed: state.seed });
           }
         }}
+        cursor={cursor}
       />
       <Link to={`/${page}/${type ?? "random"}/${Number(seed ?? "1") + 1}`}>Next</Link>
     </>

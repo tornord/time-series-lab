@@ -83,7 +83,7 @@ const baseUrl = (cmd: CommandType): string =>
 // https://mws.millistream.com/mws.fcgi?usr=${config.MS_USER}&pwd=${config.MS_SECRET}&cmd=quote&filetype=json&list=35207&fields=name,symbol,diff1d,diff1dprc,lastprice,totalnumberofshares,sector&instrumenttype=4&timezone=Europe%2FStockholm
 
 export async function fetchInstruments(
-  lists: string[],
+  lists: string[] | null = null,
   insrefs: string[] | null = null,
   fields: string[] | null = null
 ): Promise<Instrument[]> {

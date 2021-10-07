@@ -14,7 +14,7 @@ export interface TrendSignal {
   strength: number;
   duration: number;
   sharpeRatio: number;
-  q: number
+  q: number;
   k: number;
   b: number;
 }
@@ -136,7 +136,7 @@ export function trendStrength(
   const sharpeRatio = (sqrt(252) * mean) / sigma;
   const duration = (endIndex - startIndex) / 21;
   const strength = duration * sharpeRatio;
-  const q = endIndex>0 ? k-ks[endIndex-1] : 0;
+  const q = endIndex > 0 ? k - ks[endIndex - 1] : 0;
   return { mean, sigma, startIndex, endIndex, strength, sharpeRatio, duration, q, k, b };
 }
 
@@ -164,7 +164,13 @@ export function generateTestTimeSeries(type: string, seed: string, n: number) {
     } else if (type === "constant") {
       values = ns.map((d, i) => exp(dailyVol * d + log(100)));
     } else if (type === "sin") {
-      values = ns.map((d, i) => exp(dailyVol * d + (log(86) + ((log(114) - log(86)) * (1 + sin(PI * ys[i]))) / 2)));
+      const theta = 2 * PI * rng.rand();
+      const period = pow(2, 2 * rng.rand() - 1);
+      console.log(ns.length * period, (180 / PI) * theta);
+      // const theta = 0;
+      values = ns.map((d, i) =>
+        exp(dailyVol * d + (log(86) + ((log(114) - log(86)) * (1 + sin(period * PI * ys[i] + theta))) / 2))
+      );
     }
   }
   return { dates, values };

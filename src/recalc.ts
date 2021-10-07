@@ -3,6 +3,7 @@ import fs from "fs";
 import { historyToTimeSeries } from "./data/universe";
 import { calcMeasures } from "./timeSeries";
 import { History } from "./millistreamApi";
+import { MS_PER_DAY } from "./dateHelper";
 
 const { sqrt, abs } = Math;
 
@@ -40,7 +41,13 @@ function main() {
   const dir = "./src/data/ms";
   const files = fs.readdirSync(dir);
   const allinstrs = [];
-  const skips: { [type: string]: History[] } = { tooLowVol: [], extremeEvents: [], tooShortHistory: [] };
+  const skips: { [type: string]: History[] } = {
+    tooLowVol: [],
+    extremeEvents: [],
+    tooShortHistory: [],
+    notUpdatedHistory: [],
+  };
+  let maxDate: string | null = null;
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
     if (!f.match(/^[0-9]+\.json$/)) {
@@ -49,11 +56,15 @@ function main() {
     const fileName = `${dir}/${f}`;
     const h = JSON.parse(fs.readFileSync(fileName, "utf-8"));
     const ts = historyToTimeSeries(h.history);
+    if (maxDate === null || maxDate < ts.dates[ts.dates.length - 1]) {
+      maxDate = ts.dates[ts.dates.length - 1];
+    }
     h.id = String(h.insref);
     h.ticker = h.symbol;
     if (ts.values.some((d) => d <= 0 || !Number.isFinite(d))) {
       console.log("Incorrect value", h.name);
     }
+    // h.measures = { ...ts, extremeEvents: [], stdev: 0.01 };
     h.measures = calcMeasures(ts);
     fs.writeFileSync(fileName, JSON.stringify(h, null, 2), "utf-8");
     console.log(`${h.name} done.`);
@@ -67,8 +78,22 @@ function main() {
       allinstrs.push(h);
     }
   }
-  console.log(`Written ${allinstrs.length} instruments`);
+  for (let i = 0; i < allinstrs.length; i++) {
+    const instr = allinstrs[i];
+    const date = instr.measures.dates[instr.measures.dates.length - 1];
+    if ((new Date(maxDate as string).getTime() - new Date(date).getTime()) / MS_PER_DAY > 7) {
+      skips.notUpdatedHistory.push(instr);
+    }
+  }
+  for (let i = 0; i < skips.notUpdatedHistory.length; i++) {
+    const instr = skips.notUpdatedHistory[i];
+    const idx = allinstrs.findIndex((d) => d.insref === instr.insref);
+    if (idx === -1) continue;
+    allinstrs.splice(idx, 1);
+  }
+
   writeInsrefsImportFile(allinstrs);
+  console.log(`Written ${allinstrs.length} instruments`);
 
   console.log("\nVolatility too low:");
   skips.tooLowVol.forEach((h) => console.log(`${h.name} => ${h.measures.stdev * sqrt(252)}`));
@@ -83,6 +108,8 @@ function main() {
   );
   console.log("\nToo short history:");
   skips.tooShortHistory.forEach((h) => console.log(`${h.name} => ${h.measures.dates.length}`));
+  console.log("\nNot updated history:");
+  skips.notUpdatedHistory.forEach((h) => console.log(h.name));
 }
 
 main();

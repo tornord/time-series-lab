@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { indexOf, linearRegression, polynomialRegression } from "ts-math";
+import { indexOf } from "ts-math";
 import { toEpoch } from "./dateHelper";
-import { minMax, rsi } from "./timeSeries";
-import { TimeSeriesChart } from "./TimeSeriesChart";
+import { rsi } from "./timeSeries";
+import { TimeSeriesChart, useCursor } from "./TimeSeriesChart";
 import { generateTestTimeSeries, PointType, Series } from "./trend";
 import { centralRegression, pivots, turningPoints } from "./pivot";
 
@@ -14,7 +14,7 @@ export function PivotTest() {
   let { type, seed }: any = useParams();
   const page = (useLocation().pathname.match(/^\/([a-z]+)\//) as any)[1];
 
-  const N = 30;
+  const N = 20;
   const alpha = 2 / (N + 1);
   const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 240);
   const datesAsNumber = dates.map(toEpoch);
@@ -24,6 +24,8 @@ export function PivotTest() {
   const cenemas = centralRegression(logValues, alpha, polyOrder);
   const pivs = pivots(logValues, alpha, polyOrder);
   const rsi14 = rsi(values);
+
+  const cursor = useCursor(true, false);
 
   const series1: Series[] = [
     { dates, values },
@@ -58,32 +60,9 @@ export function PivotTest() {
       pointSize: 4,
     },
   ];
-  if (selectedDate) {
-    series1.push({
-      dates: [selectedDate, selectedDate],
-      values: minMax(values),
-      strokeDasharray: "3 4",
-      strokeWidth: 1,
-      color: "rgb(232, 213, 206)",
-    });
-    series2.push({
-      dates: [selectedDate, selectedDate],
-      values: minMax(cenemas.map((d) => d.k)),
-      strokeDasharray: "3 4",
-      strokeWidth: 1,
-      color: "rgb(232, 213, 206)",
-    });
-    series3.push({
-      dates: [selectedDate, selectedDate],
-      values: [15, 85],
-      strokeDasharray: "3 4",
-      strokeWidth: 1,
-      color: "rgb(232, 213, 206)",
-    });
-  }
 
   // const greenColor = "hsl(122deg 88% 33% / 30%)";
-  const trendColor = "rgb(230 42 42 / 30%)";
+  // const trendColor = "rgb(230 42 42 / 30%)";
   return (
     <>
       <TimeSeriesChart
@@ -100,6 +79,7 @@ export function PivotTest() {
             }
           }
         }}
+        cursor={cursor}
       />
       <TimeSeriesChart
         width={800}
@@ -115,6 +95,7 @@ export function PivotTest() {
             }
           }
         }}
+        cursor={cursor}
       />{" "}
       <TimeSeriesChart
         width={800}
@@ -130,6 +111,7 @@ export function PivotTest() {
             }
           }
         }}
+        cursor={cursor}
       />
       <Link to={`/${page}/${type ?? "random"}/${Number(seed ?? "1") + 1}`}>Next</Link>
     </>

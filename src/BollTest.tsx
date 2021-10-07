@@ -39,8 +39,8 @@ export function bollingerToSeries(
 export function BollTest() {
   let { type, seed }: any = useParams();
   const page = (useLocation().pathname.match(/^\/([a-z]+)\//) as any)[1];
-  const { dates, values } = (instr as any).measures;
-  // const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 120);
+  // const { dates, values } = (instr as any).measures;
+  const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", 120);
   const logValues = accumulate(values, (pRes, pVal, cVal, i) => log(cVal));
   const logReturns = accumulate(logValues, (pRes, pVal, cVal, i) => (i === 0 ? 0 : cVal - pVal));
   const N = 20;

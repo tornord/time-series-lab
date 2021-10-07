@@ -1,8 +1,15 @@
 import * as d3 from "d3";
+import { useState } from "react";
 import * as math from "ts-math";
 import { dateToString, epochToString, toEpoch } from "./dateHelper";
 import { minMax, TimeSeries } from "./timeSeries";
 import { PointType, Series } from "./trend";
+
+interface Cursor {
+  x: number;
+  y: number;
+  onMouseMove: (eventX: number, eventY: number) => void;
+}
 
 interface TimeSeriesChartProps {
   width?: number;
@@ -14,6 +21,7 @@ interface TimeSeriesChartProps {
   minValue?: number;
   maxValue?: number;
   logarithmic?: boolean;
+  cursor?: Cursor;
 }
 
 interface Point {
@@ -44,6 +52,15 @@ function createPathD(
 
 const isNumber = (x: any) => typeof x === "number";
 
+export function useCursor(syncX: boolean, syncY: boolean) {
+  const [{ x, y }, setState] = useState({ x: -1, y: -1 });
+  const onMouseMove = (eventX: number, eventY: number) => {
+    if (eventX === x && eventY === y) return;
+    setState({ x: eventX, y: eventY });
+  };
+  return { x: syncX ? x : -1, y: syncY ? y : -1, onMouseMove };
+}
+
 export function TimeSeriesChart({
   width,
   height,
@@ -54,6 +71,7 @@ export function TimeSeriesChart({
   minValue,
   maxValue,
   logarithmic,
+  cursor
 }: TimeSeriesChartProps) {
   width = width ?? 600;
   height = height ?? 300;
@@ -125,6 +143,20 @@ export function TimeSeriesChart({
       series: s,
     });
   }
+  if (cursor && (cursor.x >= 0)) {
+    traces.push({
+      index: series.length,
+      d: `M${cursor.x},${yScale(minValue as number)} L${cursor.x},${yScale(maxValue as number)}`,
+      points: [],
+      series: {
+        dates: [],
+        values: [],
+        strokeDasharray: "3 4",
+        strokeWidth: 1,
+        color: "rgb(232, 213, 206)",
+      },
+    });
+  }
 
   // console.log(minValue, maxValue, yScale(minValue), yScale(maxValue), yTicks);
   return (
@@ -132,12 +164,15 @@ export function TimeSeriesChart({
       width={width}
       height={height}
       onMouseMove={(e) => {
-        const x = e.clientX;
-        const y = e.clientY;
+        const x = e.nativeEvent.offsetX;
+        const y = e.nativeEvent.offsetY;
         const date = epochToString(xScale.invert(x) as any as number);
         const value = yScale.invert(y);
         if (onMouseMove) {
           onMouseMove(date, value);
+        }
+        if (cursor) {
+          cursor.onMouseMove(x,y);
         }
       }}
     >

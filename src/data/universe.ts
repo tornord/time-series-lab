@@ -35,7 +35,7 @@ import yar from "./ms/45659.json";
 // Telecom
 import tel from "./ms/45639.json";
 import ericb from "./ms/772.json";
-import kivb from "./ms/924.json";
+import kinvb from "./ms/924.json";
 
 // Läkemedel
 import azn from "./ms/1295.json";
@@ -67,7 +67,7 @@ names.push(sbbb, sagab);
 names.push(volvb, abb, sinch, hexab);
 names.push(eqnr, akrbp, yar);
 names.push(hmb, embrac, xpel, tsla, eluxb);
-names.push(tel, ericb, kivb);
+names.push(tel, ericb, kinvb);
 names.push(azn, getib, pfe);
 names.push(eqt, indt, inveb);
 names.push(msft, fb, intc, aapl, amzn);

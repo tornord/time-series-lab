@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { minMax } from "./timeSeries";
 import Grid, { Column } from "./Grid";
 import { getUniverse } from "./data/universe";
-import { TimeSeriesChart } from "./TimeSeriesChart";
+import { TimeSeriesChart, useCursor } from "./TimeSeriesChart";
 import { History } from "./millistreamApi";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { indexOf, RandomNumberGenerator, stdev } from "ts-math";
 import { ChartTest } from "./ChartTest";
 import { TrendTest } from "./TrendTest";
+import { FourierTest } from "./FourierTest";
 import { PointType, Series, trendToSeries } from "./trend";
 import { toEpoch } from "./dateHelper";
 import { CurveTest } from "./CurveTest";
@@ -143,6 +144,7 @@ function StartView() {
     () => (universe ? calcMinMaxs(universe) : { totMinMaxRatio: 0, startDate: "", endDate: "" }),
     [universe]
   );
+  const cursor = useCursor(true, false);
   useEffect(() => {
     if (universe && !selectedStock) {
       const ms = universe && universe.length > 0 ? universe[0].measures : null;
@@ -246,6 +248,7 @@ function StartView() {
         minValue={minValue}
         maxValue={maxValue}
         logarithmic={true}
+        cursor={cursor}
       />
       <TimeSeriesChart
         width={800}
@@ -260,9 +263,20 @@ function StartView() {
         endDate={endDate}
         minValue={15}
         maxValue={85}
+        cursor={cursor}
       />
       <p>
-        {selectedStock.id} - <a href={`https://www.di.se/bors/aktier/${formatUrlFriendlyName(`${selectedStock.symbol || selectedStock.name}-${selectedStock.insref}`)}`} target="_blank" rel="noreferrer">{selectedStock.name}</a> - {selectedDate} 
+        {selectedStock.id} -{" "}
+        <a
+          href={`https://www.di.se/bors/aktier/${formatUrlFriendlyName(
+            `${selectedStock.symbol || selectedStock.name}-${selectedStock.insref}`
+          )}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {selectedStock.name}
+        </a>{" "}
+        - {selectedDate}
       </p>
       <Grid
         data={tableData}
@@ -300,6 +314,9 @@ function App() {
         </Route>
         <Route path="/trend/:type/:seed">
           <TrendTest />
+        </Route>
+        <Route path="/fourier/:type/:seed">
+          <FourierTest />
         </Route>
         <Route path="/pivot/:type/:seed">
           <PivotTest />
