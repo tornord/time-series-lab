@@ -6724,6 +6724,11 @@
   "resolved" "https://registry.npmjs.org/he/-/he-1.2.0.tgz"
   "version" "1.2.0"
 
+"heap@^0.2.6":
+  "integrity" "sha1-CH4fELBGky/IWU3Z5tN4r8nR5aw="
+  "resolved" "https://registry.npmjs.org/heap/-/heap-0.2.6.tgz"
+  "version" "0.2.6"
+
 "hex-color-regex@^1.1.0":
   "integrity" "sha512-l9sfDFsuqtOqKDsQdqrMRk0U85RZc0RtOR9yPI7mRVOa4FsR/BVnZ0shmQRM96Ji99kYZP/7hn1cedc1+ApsTQ=="
   "resolved" "https://registry.npmjs.org/hex-color-regex/-/hex-color-regex-1.1.0.tgz"
@@ -8806,7 +8811,27 @@
     "ml-array-max" "^1.2.3"
     "ml-array-min" "^1.2.2"
 
-"ml-matrix@^6.7.0":
+"ml-distance-euclidean@^2.0.0":
+  "integrity" "sha512-yC9/2o8QF0A3m/0IXqCTXCzz2pNEzvmcE/9HFKOZGnTjatvBbsn4lWYJkxENkA4Ug2fnYl7PXQxnPi21sgMy/Q=="
+  "resolved" "https://registry.npmjs.org/ml-distance-euclidean/-/ml-distance-euclidean-2.0.0.tgz"
+  "version" "2.0.0"
+
+"ml-distance-matrix@^2.0.1":
+  "integrity" "sha512-6wt3bvK8WzAjyuBt9+wnyGanphrAZyqJGwiEEfuknfu8IQBtHYWpyLhjtQ8R7rjiPyXlF9eP7GcI5L7OA1NLEQ=="
+  "resolved" "https://registry.npmjs.org/ml-distance-matrix/-/ml-distance-matrix-2.0.1.tgz"
+  "version" "2.0.1"
+
+"ml-hclust@^3.1.0":
+  "integrity" "sha512-EI6VCHrPHOsPsgZ1a/auhdxzHpEZ+kV7yjCGGIU+EWtb/XV1ZWSg5GlU32Qt4T05m98wCSQykPBhIg5aW6JjuQ=="
+  "resolved" "https://registry.npmjs.org/ml-hclust/-/ml-hclust-3.1.0.tgz"
+  "version" "3.1.0"
+  dependencies:
+    "heap" "^0.2.6"
+    "ml-distance-euclidean" "^2.0.0"
+    "ml-distance-matrix" "^2.0.1"
+    "ml-matrix" "^6.8.0"
+
+"ml-matrix@^6.7.0", "ml-matrix@^6.8.0":
   "integrity" "sha512-c29k/gtyzLeNs0vLB2u4hHYcKr8PdyIs4oB0OsVhlgKiHbYyFkC2e98FcUPKhcnzn234jeZk42No+6d4bXBDNg=="
   "resolved" "https://registry.npmjs.org/ml-matrix/-/ml-matrix-6.8.0.tgz"
   "version" "6.8.0"

@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { minMax } from "./timeSeries";
 import Grid, { Column } from "./Grid";
-import { getUniverse } from "./data/universe";
+// import { getUniverse } from "./data/universe";
 import { TimeSeriesChart, useCursor } from "./TimeSeriesChart";
 import { History } from "./millistreamApi";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { indexOf, RandomNumberGenerator, stdev } from "ts-math";
 import { ChartTest } from "./ChartTest";
 import { TrendTest } from "./TrendTest";
-import { FourierTest } from "./FourierTest";
+import { calcFourier, FourierTest } from "./FourierTest";
 import { PointType, Series, trendToSeries } from "./trend";
 import { toEpoch } from "./dateHelper";
 import { CurveTest } from "./CurveTest";
@@ -17,6 +17,7 @@ import { PivotTest } from "./PivotTest";
 import { centralRegression, pivots } from "./pivot";
 import { allInstrumentInsrefs } from "./data/ms/instruments";
 import axios from "axios";
+import { TreeTest } from "./TreeTest";
 
 const { sqrt, exp } = Math;
 const trendColor = "rgb(230 42 42 / 30%)";
@@ -158,6 +159,12 @@ function StartView() {
   }
   const selectedIndex = indexOf(toEpoch(selectedDate), selectedStock.measures.datesAsNumber);
 
+  const { fourierValues, xs, ys } = calcFourier(
+    selectedStock.measures.dates,
+    selectedStock.measures.logValues,
+    selectedIndex
+  );
+
   const tableData = universe.map((d: History, i: number) => {
     const res: any = {
       name: d.name,
@@ -205,6 +212,7 @@ function StartView() {
       "rgb(10 101 158 / 20%)",
       "rgb(10 101 158 / 10%)"
     ),
+    { dates: selectedStock.measures.dates, values: fourierValues },
   ];
   const Npivot = 40;
   const cenemas = centralRegression(selectedStock.measures.logValues, 2 / (Npivot + 1), 4);
@@ -320,6 +328,9 @@ function App() {
         </Route>
         <Route path="/pivot/:type/:seed">
           <PivotTest />
+        </Route>
+        <Route path="/tree">
+          <TreeTest />
         </Route>
         <Route path="/">
           <StartView />

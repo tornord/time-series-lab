@@ -43,3 +43,13 @@ code {
     }
   }
 }
+
+.treemap {
+  rect,
+  circle,
+  line,
+  path {
+    stroke-width: 2;
+    stroke: #789;
+  }
+}

@@ -1,5 +1,5 @@
 import * as math from "ts-math";
-import { fmin, linearRegression, normalInv, numeric, qqRegression, RandomNumberGenerator, sqr } from "ts-math";
+import { fmin, linearRegression, normalInv, numeric, qqRegression, RandomNumberGenerator } from "ts-math";
 // import { PCA } from "ml-pca";
 import { fminLossFun } from "./logUtility";
 import { addDays, epochToString, isBusinessDay, toEpoch } from "./dateHelper";
@@ -333,7 +333,7 @@ export function rollingStdev(logReturns: number[], alpha: number) {
       for (let j = 0; j < m; j++) {
         ws[j] = centralWeights[j] * expWeights[m - 1 - arr[j].index];
       }
-      const { k, b, error } = linearRegression(xs, ys, ws);
+      const { k /*, b, error */ } = linearRegression(xs, ys, ws);
       res[i] = k;
     }
   }

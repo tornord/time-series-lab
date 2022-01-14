@@ -1,29 +1,29 @@
 import fs from "fs";
 
-import { historyToTimeSeries } from "./data/universe";
+import historyToTimeSeries from "./data/historyToTimeSeries";
 import { calcMeasures } from "./timeSeries";
 import { History } from "./millistreamApi";
 import { MS_PER_DAY } from "./dateHelper";
 
 const { sqrt, abs } = Math;
 
-function writeDataImportFile(instrs: any[]) {
-  const importRows: string[] = [];
-  const exportRows: string[] = [];
-  for (let i = 0; i < instrs.length; i++) {
-    const instr: any = instrs[i];
-    let tickname: string = instr.symbol.toLowerCase().replace(/ /g, "");
-    if (tickname.match(/^[0-9]/)) {
-      tickname = `_${tickname}`;
-    }
-    importRows.push(`import ${tickname} from "./${instr.insref}.json";`);
-    exportRows.push(`${tickname},`);
-  }
-  let tsFile = `import { History } from "./millistreamApi";\n`;
-  tsFile += `${importRows.join("\n")}\n\n`;
-  tsFile += `export const allInstruments: History[] = [\n${exportRows.map((d) => `  ${d}`).join("\n")}\n];\n`;
-  fs.writeFileSync(`./src/data/ms/instruments.ts`, tsFile, "utf-8");
-}
+// function writeDataImportFile(instrs: any[]) {
+//   const importRows: string[] = [];
+//   const exportRows: string[] = [];
+//   for (let i = 0; i < instrs.length; i++) {
+//     const instr: any = instrs[i];
+//     let tickname: string = instr.symbol.toLowerCase().replace(/ /g, "");
+//     if (tickname.match(/^[0-9]/)) {
+//       tickname = `_${tickname}`;
+//     }
+//     importRows.push(`import ${tickname} from "./${instr.insref}.json";`);
+//     exportRows.push(`${tickname},`);
+//   }
+//   let tsFile = `import { History } from "./millistreamApi";\n`;
+//   tsFile += `${importRows.join("\n")}\n\n`;
+//   tsFile += `export const allInstruments: History[] = [\n${exportRows.map((d) => `  ${d}`).join("\n")}\n];\n`;
+//   fs.writeFileSync(`./src/data/ms/instruments.ts`, tsFile, "utf-8");
+// }
 
 function writeInsrefsImportFile(instrs: any[]) {
   // const insrefs: string[] = [];

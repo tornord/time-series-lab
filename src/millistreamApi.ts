@@ -78,7 +78,7 @@ export interface Fundamentals {
 // const baseUrl = (cmd: CommandType): string =>
 //   `${config.MS_URL}/mws.fcgi?usr=${config.MS_USER}&pwd=${config.MS_SECRET}&cmd=${cmd}&filetype=json`;
 const baseUrl = (cmd: CommandType): string =>
-  `${config.MS_URL_DELAYED}/mws.fcgi?usr=${config.MS_USER_DELAYED}&pwd=${config.MS_SECRET}&cmd=${cmd}&filetype=json`;
+  `${config.MS_URL_DELAYED}/mws.fcgi?usr=${config.MS_USER_DELAYED}&pwd=${config.MS_SECRET}&cmd=${cmd}&filetype=json&timezone=Europe%2FStockholm`;
 
 // https://mws.millistream.com/mws.fcgi?usr=${config.MS_USER}&pwd=${config.MS_SECRET}&cmd=quote&filetype=json&list=35207&fields=name,symbol,diff1d,diff1dprc,lastprice,totalnumberofshares,sector&instrumenttype=4&timezone=Europe%2FStockholm
 
@@ -126,7 +126,7 @@ export async function fetchInstruments(
     fields.unshift("insref");
   }
   const url =
-    `${baseUrl(CommandType.Quote)}&timezone=Europe%2FStockholm&` +
+    `${baseUrl(CommandType.Quote)}&` +
     `${lists ? `list=${lists.join(",")}` : insrefs ? `insref=${insrefs.join(",")}` : ""}` +
     `&fields=${fields.join("%2C")}&instrumenttype=4`;
   let res;
@@ -204,8 +204,8 @@ export async function fetchFundamentals(
       ];
       const url =
         `${baseUrl(CommandType.Fundamentals)}` +
-        `&filetype=json&startdate=${startDate}&enddate=${endDate}&currency=SEK&` +
-        `fields=${fields.join("%2C")}&timezone=Europe%2FStockholm&insref=${companyref}`;
+        `&startdate=${startDate}&enddate=${endDate}&currency=SEK&` +
+        `fields=${fields.join("%2C")}&insref=${companyref}`;
       const msRes = await fetch(url);
       return msRes;
     });
@@ -229,7 +229,7 @@ export async function fetchSingleHistory(insref: string, startDate: string): Pro
   const url =
     `${baseUrl(CommandType.History)}` +
     `&insref=${insref}&startdate=${startDate}&adjusted=1&` +
-    `fields=${fields.join("%2C")}&timezone=Europe%2FStockholm`;
+    `fields=${fields.join("%2C")}`;
   const res = await fetch(url);
   return !res || res.length === 0 ? null : res[0];
 }

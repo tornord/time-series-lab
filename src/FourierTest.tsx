@@ -1,42 +1,23 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { round, indexOf, numeric, range, sum } from "ts-math";
+import { indexOf, range, sum } from "ts-math";
 import { toEpoch } from "./dateHelper";
 import { TimeSeriesChart, useCursor } from "./TimeSeriesChart";
 import { generateTestTimeSeries } from "./trend";
 import { fourierRegression, sinValue } from "./fourier";
 import { minMax } from "./timeSeries";
+// import instr from "./data/ms/42953.json";
 
-const { log, sin, PI, exp, hypot, atan2, pow } = Math;
+const { log, PI, exp, hypot, atan2, pow } = Math;
 
 // http://localhost:3000/fourier/sin/513
 
-export function FourierTest() {
-  let { type, seed }: any = useParams();
-  const page = (useLocation().pathname.match(/^\/([a-z]+)\//) as any)[1];
-  const M = 240;
-  const { dates, datesAsNumbers, values, logValues, minValue, maxValue } = useMemo(() => {
-    const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", M);
-    const datesAsNumbers = dates.map(toEpoch);
-    const logValues = values.map(log);
-    let [minValue, maxValue] = minMax(values);
-    minValue /= 1.05;
-    maxValue *= 1.05;
-    return { dates, datesAsNumbers, values, logValues, minValue, maxValue };
-  }, [M, type, seed]);
-
-  const cursor = useCursor(true, false);
-
-  let maxIndex = Number.NaN;
-  const [state, setState] = useState({ endIndex: 119, type: type ?? "random", seed: seed ?? "1" });
-  if ((type ?? "random") !== state.type || (seed ?? "1") !== state.seed) {
-    setState({ endIndex: maxIndex, type: type ?? "random", seed: seed ?? "1" });
-  }
-
-  const N = 20;
-  const periods = [N / 2, N, 2 * N, 4 * N, 8 * N];
+export function calcFourier(dates: string[], logValues: number[], endIndex: number | null) {
+  const M = dates.length;
+  const N = 40;
+  const periods = [-1, 0, 1, 2].map((d) => N * pow(2, d));
   const alpha = 2 / (N + 1);
-  const index = !Number.isNaN(state.endIndex) ? state.endIndex : M - 1;
+  const index: number = !Number.isNaN(endIndex) ? (endIndex as number) : M - 1;
   const ws = new Array(dates.length);
   for (let i = 0; i < dates.length; i++) {
     ws[i] = i > index ? 0 : pow(1 - alpha, index - i);
@@ -57,11 +38,11 @@ export function FourierTest() {
   }
   // console.log(hs);
   // console.log(ks[0], ...periods.map((p, i)=>hypot(ks[2 * i + 1], ks[2 * i + 2])));
-  const x = sum(hs.map((h, j) => h * sinValue(periods[j], PI / 2 - ts[j], index)));
-  const y = sum(hs.map((h, j) => h * sinValue(periods[j], -ts[j], index)));
-  console.log(index, (180 / PI) * Math.atan2(y, x), x, y);
+  // const x = sum(hs.map((h, j) => h * sinValue(periods[j], PI / 2 - ts[j], index)));
+  // const y = sum(hs.map((h, j) => h * sinValue(periods[j], -ts[j], index)));
+  // console.log(index, (180 / PI) * Math.atan2(y, x), x, y);
 
-  const fourierValues = dates.map((d, i) => {
+  const fourierValues = dates.map((d: string, i: number) => {
     let s = ks[0];
     periods.forEach((p, j) => {
       s += ks[2 * j + 1] * sinValue(p, PI / 2, i);
@@ -70,13 +51,41 @@ export function FourierTest() {
     return exp(s);
   });
 
-  const fourierValues2 = dates.map((d, i) => {
-    let s = ks[0];
-    periods.forEach((p, j) => {
-      s += hs[j] * sinValue(p, PI / 2 - ts[j], i);
-    });
-    return exp(s);
-  });
+  // const fourierValues2 = dates.map((d: string, i: number) => {
+  //   let s = ks[0];
+  //   periods.forEach((p, j) => {
+  //     s += hs[j] * sinValue(p, PI / 2 - ts[j], i);
+  //   });
+  //   return exp(s);
+  // });
+
+  return { fourierValues, xs, ys };
+}
+
+export function FourierTest() {
+  let { type, seed }: any = useParams();
+  const page = (useLocation().pathname.match(/^\/([a-z]+)\//) as any)[1];
+  const M = 120;
+  const { dates, datesAsNumbers, values, logValues, minValue, maxValue } = useMemo(() => {
+    const { dates, values } = generateTestTimeSeries(type ?? "random", seed ?? "1", M);
+    // const { dates, values } = (instr as any).measures;
+    const datesAsNumbers = dates.map(toEpoch);
+    const logValues = values.map(log);
+    let [minValue, maxValue] = minMax(values);
+    minValue /= 1.05;
+    maxValue *= 1.05;
+    return { dates, datesAsNumbers, values, logValues, minValue, maxValue };
+  }, [M, type, seed]);
+
+  const cursor = useCursor(true, false);
+
+  let maxIndex = Number.NaN;
+  const [state, setState] = useState({ endIndex: 119, type: type ?? "random", seed: seed ?? "1" });
+  if ((type ?? "random") !== state.type || (seed ?? "1") !== state.seed) {
+    setState({ endIndex: maxIndex, type: type ?? "random", seed: seed ?? "1" });
+  }
+
+  const { fourierValues, xs, ys } = calcFourier(dates, logValues, state.endIndex);
 
   // const res: TrendSignal = trendSignals.find((d) => d.endIndex === state.endIndex) as any;
   // console.log(
@@ -90,7 +99,6 @@ export function FourierTest() {
   const series1 = [
     { dates, values },
     { dates, values: fourierValues },
-    { dates, values: fourierValues2 },
   ];
   const series2 = [{ dates, values: xs }];
   const series3 = [{ dates, values: ys }];

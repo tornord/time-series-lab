@@ -1,12 +1,10 @@
 import React from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { stdev } from "ts-math";
-import { getUniverse } from "./data/universe";
 import { accumulate, ema, rollingBollinger, rollingStdev } from "./timeSeries";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { toAsciiTable } from "./toAsciiTable";
 import { generateTestTimeSeries, Series } from "./trend";
-import instr from "./data/ms/1412764.json"
+// import instr from "./data/ms/1412764.json"
 
 const { log, exp } = Math;
 

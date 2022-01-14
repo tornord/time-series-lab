@@ -118,10 +118,10 @@ export function TimeSeriesChart({
   if (!isNumber(maxValue)) {
     maxValue = totMaxV;
   }
-  if (!isNumber(startDate)) {
+  if (typeof startDate !== "string") {
     startDate = totStartD;
   }
-  if (!isNumber(endDate)) {
+  if (typeof endDate !== "string") {
     endDate = totEndD;
   }
   // console.log(minValue, maxValue, startDate, endDate);

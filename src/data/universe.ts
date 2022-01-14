@@ -33,7 +33,7 @@ import akrbp from "./ms/45743.json";
 import yar from "./ms/45659.json";
 
 // Telecom
-import tel from "./ms/45639.json";
+//import tel from "./ms/45639.json";
 import ericb from "./ms/772.json";
 import kinvb from "./ms/924.json";
 
@@ -67,21 +67,11 @@ names.push(sbbb, sagab);
 names.push(volvb, abb, sinch, hexab);
 names.push(eqnr, akrbp, yar);
 names.push(hmb, embrac, xpel, tsla, eluxb);
-names.push(tel, ericb, kinvb);
+names.push(ericb, kinvb);
 names.push(azn, getib, pfe);
 names.push(eqt, indt, inveb);
 names.push(msft, fb, intc, aapl, amzn);
 names.push(fnox);
-
-export function historyToTimeSeries(historyItems: HistoryItem[]): TimeSeries {
-  const idxVals = historyItems
-    .map((e: HistoryItem, i: number) => ({ index: i, value: e.closeprice }))
-    .filter((d) => typeof d.value === "number" && d.value > 0 && Number.isFinite(d.value));
-
-  const dates = idxVals.map(({ index }) => historyItems[index].date);
-  const values = idxVals.map(({ value }) => value);
-  return { dates, values };
-}
 
 export function getUniverse(): History[] {
   return names;
