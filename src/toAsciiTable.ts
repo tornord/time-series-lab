@@ -1,5 +1,7 @@
-import AsciiTable from "ascii-table";
+// import AsciiTable from "ascii-table";
 import { numeric } from "ts-math";
+
+const AsciiTable = require("ascii-table");
 
 export function toAsciiTable(arrays: number[][], heading: string[], decimals: number[] | null = null) {
   const rows = numeric.transpose(

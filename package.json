@@ -49,7 +49,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start:fetch": "ts-node --project ts-node.tsconfig.json src/fetch",
+    "start:fetchInstruments": "ts-node --project ts-node.tsconfig.json src/fetchInstruments",
+    "start:fetchHistory": "ts-node --project ts-node.tsconfig.json src/fetchHistory",
+    "start:recalc": "ts-node --project ts-node.tsconfig.json src/recalc",
     "start:server": "ts-node --project ts-node.tsconfig.json src/server",
     "build": "react-scripts build",
     "test": "react-scripts test",

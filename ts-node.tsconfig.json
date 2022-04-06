@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "commonjs",
     "target": "ES2017" // For NodeJS 8 compat, see https://www.typescriptlang.org/tsconfig#target for more info
   }
 }

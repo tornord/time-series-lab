@@ -1,4 +1,4 @@
-const fields = [
+export const fields = [
   "sales", // Intäkter
   "gp", // Bruttoresultat
   "ebit", // Rörelseresultat

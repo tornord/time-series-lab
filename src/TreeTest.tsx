@@ -4,7 +4,7 @@ import { agnes, Cluster } from "ml-hclust";
 import * as d3 from "d3";
 import { toAsciiTable } from "./toAsciiTable";
 
-const round2 = (x: number) => math.round(x, 2);
+// const round2 = (x: number) => math.round(x, 2);
 
 const { cos, sin, PI, hypot } = Math;
 
